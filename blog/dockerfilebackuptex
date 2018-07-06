@@ -1,0 +1,10 @@
+FROM ubuntu:16.04
+EXPOSE 8080
+RUN apt-get update && apt-get install -y wget perl && rm -rf /var/lib/apt/lists/*
+COPY texlive.sh /
+COPY texlive.profile /
+COPY blog $HOME
+COPY post $HOME
+COPY svglatex $HOME
+COPY posts $HOME/posts
+COPY posts.toml $HOME

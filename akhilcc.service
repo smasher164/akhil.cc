@@ -1,0 +1,14 @@
+[Unit]
+Description=akhilcc
+After=docker.service
+Requires=docker.service
+
+[Service]
+User=core
+TimeoutStartSec=0
+KillMode=none
+ExecStart=/home/core/akhilcc.sh
+ExecStop=/usr/bin/docker rm -f akhilcc
+
+[Install]
+WantedBy=multi-user.target

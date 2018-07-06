@@ -1,0 +1,14 @@
+[Unit]
+Description=vanity
+After=docker.service
+Requires=docker.service
+
+[Service]
+User=core
+TimeoutStartSec=0
+KillMode=none
+ExecStart=/home/core/vanity.sh
+ExecStop=/usr/bin/docker stop vanity
+
+[Install]
+WantedBy=multi-user.target

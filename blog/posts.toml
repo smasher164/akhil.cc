@@ -1,0 +1,11 @@
+[[Posts]]
+Route = "/"
+File = "toc.xd"
+
+[[Posts]]
+Route = "/hello-world"
+File = "hello_world.xd"
+
+[[Posts]]
+Route = "/mexdown"
+File = "intro_mexdown.xd"

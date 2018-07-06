@@ -1,0 +1,14 @@
+[Unit]
+Description=blog
+After=docker.service
+Requires=docker.service
+
+[Service]
+User=core
+TimeoutStartSec=0
+KillMode=none
+ExecStart=/home/core/blog.sh
+ExecStop=/usr/bin/docker stop blog
+
+[Install]
+WantedBy=multi-user.target
