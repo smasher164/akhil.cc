@@ -4,6 +4,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"text/template"
 
 	"akhil.cc/mexdown/gen/html"
 	"akhil.cc/mexdown/parser"
@@ -28,9 +29,22 @@ func main() {
 		log.Print(err)
 		return
 	}
+	const stub = `<html>
+<head>
+	<meta charset="UTF-8"><meta name="viewport" content="width=device-width, maximum-scale=1.0">
+<style>
+html {
+	position: relative;
+	width: 100%;
+	height: 100%;
+}
+</style>
+</head>
+<body>{{printf "%s" .}}</body></html>`
+	tmpl := template.Must(template.New("").Parse(stub))
 	m := http.NewServeMux()
 	m.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		w.Write(out)
+		tmpl.Execute(w, out)
 	})
 	m.HandleFunc("/favicon.ico", func(w http.ResponseWriter, r *http.Request) {
 		w.Write(nil)
