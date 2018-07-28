@@ -12,6 +12,7 @@ import (
 
 	"github.com/BurntSushi/toml"
 	"github.com/NYTimes/gziphandler"
+	"golang.org/x/crypto/acme"
 	"golang.org/x/crypto/acme/autocert"
 )
 
@@ -98,6 +99,10 @@ func main() {
 		TLSConfig: &tls.Config{
 			GetCertificate:           cert.GetCertificate,
 			PreferServerCipherSuites: true,
+			NextProtos: []string{
+				"h2", "http/1.1", // enable HTTP/2
+				acme.ALPNProto, // enable tls-alpn ACME challenges
+			},
 		},
 	}
 	go func() {
