@@ -1,0 +1,14 @@
+[Unit]
+Description=static
+After=docker.service
+Requires=docker.service
+
+[Service]
+User=core
+TimeoutStartSec=0
+KillMode=none
+ExecStart=/home/core/static.sh
+ExecStop=/usr/bin/docker stop static
+
+[Install]
+WantedBy=multi-user.target

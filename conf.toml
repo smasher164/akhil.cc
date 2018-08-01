@@ -1,12 +1,19 @@
 CacheDir = "/certs"
-Valid = ["akhil.cc", "www.akhil.cc", "blog.akhil.cc", "www.blog.akhil.cc"]
+Valid = [
+	"akhil.cc", "www.akhil.cc", 
+	"blog.akhil.cc", "www.blog.akhil.cc", 
+	"static.akhil.cc", "www.static.akhil.cc"
+]
 Email = "aindurti@gmail.com"
-[[Hosts]]
-Route = "www.akhil.cc/"
-Target = "http://127.0.0.1:8082"
 [[Hosts]]
 Route = "www.blog.akhil.cc/"
 Target = "http://127.0.0.1:8080"
 [[Hosts]]
 Route = "/mexdown/"
 Target = "http://127.0.0.1:8081"
+[[Hosts]]
+Route = "www.akhil.cc/"
+Target = "http://127.0.0.1:8082"
+[[Hosts]]
+Route = "www.static.akhil.cc/"
+Target = "http://127.0.0.1:8083"
