@@ -60,10 +60,10 @@ One neat feature is if I want to display triple-backquotes like I do above, I si
 
 One can make a directive for any text they want to present, because a directive is simply the output of a process that exists on their system. One can conceivably create directives that include images, generate diagrams, include interactive models, etc...
 
-### Supports Multiple Backends
+### Support for Multiple Backends
 The parser is completely decoupled from the backend document generators. A major flaw in many lightweight markup languages is that they narrowly target a specific language for code generation, like HTML. mexdown aims to be language-agnostic in its construction, so the parser is oblivious to the subsequent phases of compilation. It's sole job is to produce a syntax tree representation of the document. Details like html escaping and overlapping markup are treated in the backend, and don't pollute the parser. Although I currently only have an html backend, my plan is to create a Google Slides backend to automatically generate a presentation.
 
-### Library usage
+### Also a Library
 Although mexdown works on the command line with various options and configurations, it can equivalently be used as a Go library. This is particularly useful for server-side document-generation.
 ```
 ast := parse.MustParse(reader)

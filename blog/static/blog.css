@@ -107,6 +107,12 @@ body {
 	width: 100%;
 	max-width: 60em;
 }
+/* footer */
+body::after {
+    content: '';
+    height: 10px;
+    display: block;
+}
 @media screen and (max-width: 720px) {
 	body {
 		width: 80%;

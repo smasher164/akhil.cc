@@ -1,0 +1,158 @@
+<style>
+    p {
+        white-space: pre-line;
+    }
+</style>
+# The Problem of Overlapping Tags
+#### September 28, 2018
+
+Mexdown markup has the special property that text formatting can overlap. For example, if you want text that has regions which are *italic, _italic and underlined,* or just underlined_, you can simply write it as `*italic, _italic and underlined,* or just underlined_` instead of redundantly opening and closing the underline like `*italic, _italic and underlined,_*_ or just underlined_`. You can imagine that text with multiple levels of nested formatting would benefit from the clarity of overlapping markup.
+```
+```
+However, browsers do not like overlapping HTML and it is not considered valid. Browsers can do some non-normative error recovery, as mentioned in the [W3C standard](error section). In fact, they provide the [adoption agency](adoption) algorithm, which I will mention later. Mexdown’s AST encodes a paragraph’s formatting information as a list of structs, containing beginning and ending offsets.
+```
+type Format struct {
+    Kind FType
+    Beg  int
+    End  int
+}
+```
+Given that the Beg and End offsets from separate structs can overlap, how does the code generator generate non-overlapping HTML? The adoption agency algorithm mentioned earlier maintains a stack of formatting nodes, checking specific error conditions along the way, and attempts to construct a tree with the same semantics as the original markup. The closest comparison I can think of is the [Shunting-yard algorithm](shunt) but the adoption agency reattaches child nodes to new parents, hence the name.
+```
+```
+Paragraphs in mexdown aren’t amenable to the same manipulation as a DOM that is inherently a tree-like structure, at least not directly. We are given one contiguous body of text, and a list of positions and their formatting information.
+```
+// beginning and ending Formats are internally split into this structure.
+type repl struct {
+    i     int // position in text
+    w     int // width of tag
+    kind  int // e.g. <em>, </u>, … 
+    extra int
+}
+```
+Using a list of these tags, we would like to possibly manipulate them in-place in a list instead of using a stack to construct a tree. With the resultant list of tags, I can simply print them into a buffer, along with the text at those positions.
+```
+```
+To demonstrate the algorithm I use in mexdown, I will simplify the problem statement slightly without loss of generality. In HTML, `<em> this is <u> overlapping </em> text </u>`, but we will represent this as `a b -a -b`. That is, an opening tag is represented by a letter, and its respective closing tag is the negation the same letter. Our goal is to transform the HTML into `<em> this is <u> overlapping </u> </em> <u> text </u>`, which our solution represents as `a b -b -a b -b`.
+```
+```
+Here is the algorithm written in Go, and a [playground link](playground):
+```
+package main
+
+import (
+    "fmt"
+    "strings"
+)
+
+type tags struct {
+    s []string
+}
+
+func from(s string) *tags {
+    return &tags{strings.Fields(s)}
+}
+
+func (t *tags) insert(i int, tag string) {
+    t.s = append(t.s, "")
+    copy(t.s[i+1:], t.s[i:])
+    t.s[i] = tag
+}
+
+func (t *tags) str() string {
+    return strings.Join(t.s, " ")
+}
+
+func isOpenTag(tag string) bool {
+    return tag[0] != '-'
+}
+
+func isRespectivePair(a, b string) bool {
+    return a == b[1:]
+}
+
+func respectiveClosingTag(tag string) string {
+    return "-" + tag
+}
+
+func main() {
+    list := from("a b -a -b")
+    bottom := 0
+    for current := 0; current < len(list.s); current++ {
+        // Find closing tag
+        if !isOpenTag(list.s[current]) {
+            // Walk backwards through list
+            for lower := current - 1; lower >= bottom; lower-- {
+                // Find first opening tag that does not match closing
+                if isOpenTag(list.s[lower]) && !isRespectivePair(list.s[lower], list.s[current]) {
+                    // Insert its closing tag before our unmatched tag
+                    list.insert(current, respectiveClosingTag(list.s[lower]))
+                    list.insert(current+2, list.s[lower])
+                }
+                current++
+            }
+            bottom = current + 1
+        }
+    }
+    fmt.Println(list.str())
+}
+
+```
+
+Notice that the algorithm makes the greedy choice to close the unmatched tag (insert at position i), and reopen it (insert at position i+2). It does this repeatedly until the lower pointer it reaches the bottom index. This effectively partitions the list into a non-overlapping and overlapping section, making it easy to parallelize.
+```
+```
+Here's the execution pattern for a list of size 8:
+```
+a b c d -c -a -b -d
+^
+a b c d -c -a -b -d
+  ^
+a b c d -c -a -b -d
+    ^
+a b c d -c -a -b -d
+      ^
+a b c d -c -a -b -d
+      ^  ^
+a b c d -d -c d -a -b -d
+    ^       ^
+a b c d -d -c d -a -b -d
+  ^           ^
+a b c d -d -c -b d b -a -b -d
+^                ^
+a b c d -d -c -b -a d a b -a -b -d
+^                   ^
+a b c d -d -c -b -a d a b -b -a b -b -d
+                      ^
+a b c d -d -c -b -a d a b -b -a b -b -d
+                        ^
+a b c d -d -c -b -a d a b -b -a b -b -d
+                        ^  ^
+a b c d -d -c -b -a d a b -b -a b -b -d
+                           ^  ^
+a b c d -d -c -b -a d a b -b -a b -b -d
+                        ^     ^
+a b c d -d -c -b -a d a b -b -a b -b -d
+                      ^       ^
+a b c d -d -c -b -a d a b -b -a b -b -d
+                                ^  ^
+a b c d -d -c -b -a d a b -b -a b -b -d
+                                   ^  ^
+a b c d -d -c -b -a d a b -b -a b -b -d
+                                ^     ^
+a b c d -d -c -b -a d a b -b -a b -b -d
+                              ^       ^
+a b c d -d -c -b -a d a b -b -a b -b -d
+                           ^          ^
+a b c d -d -c -b -a d a b -b -a b -b -d
+                        ^             ^
+a b c d -d -c -b -a d a b -b -a b -b -d
+                      ^               ^
+a b c d -d -c -b -a d a b -b -a b -b -d
+                    ^                 ^
+```
+
+[error section]: https://www.w3.org/TR/html5/syntax.html#an-introduction-to-error-handling-and-strange-cases-in-the-parser
+[adoption]: https://www.w3.org/TR/html5/syntax.html#adoption-agency-algorithm
+[shunt]: https://en.wikipedia.org/wiki/Shunting-yard_algorithm
+[playground]: https://play.golang.org/p/aR8RHOhIC2S

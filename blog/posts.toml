@@ -9,3 +9,7 @@ File = "hello_world.xd"
 [[Posts]]
 Route = "/mexdown"
 File = "intro_mexdown.xd"
+
+[[Posts]]
+Route = "/overlapping-tags"
+File = "overlap.xd"
