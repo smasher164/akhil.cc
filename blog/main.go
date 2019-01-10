@@ -34,7 +34,7 @@ type blog struct {
 
 const stub = `<html>
     <head>
-        <meta charset="UTF-8"><meta name="viewport" content="width=device-width, maximum-scale=1.0">
+        <meta charset="UTF-8"><meta name="viewport" content="width=device-width, minimum-scale=1.0">
         <link href="/static/blog.css" rel="stylesheet">
     </head>
     <body>

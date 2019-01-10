@@ -8,3 +8,4 @@ COPY post $HOME
 COPY svglatex $HOME
 COPY posts $HOME/posts
 COPY posts.toml $HOME
+RUN /texlive.sh

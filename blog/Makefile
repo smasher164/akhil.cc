@@ -5,7 +5,7 @@ build:
 	CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build github.com/smasher164/post
 	CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build github.com/smasher164/svglatex
 	docker build . --tag blog_1:prod
-	docker run --rm -detach -p 8080:8080 blog_1:prod
+	docker run --rm -p 8080:8080 blog_1:prod
 deploy:
 	docker ps -a | awk '{ print $$1,$$2 }' | grep blog_1:prod | awk '{print $$1 }' | xargs -I {} docker rm -f {}
 	CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build

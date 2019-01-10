@@ -13,3 +13,7 @@ File = "intro_mexdown.xd"
 [[Posts]]
 Route = "/overlapping-tags"
 File = "overlap.xd"
+
+[[Posts]]
+Route = "/ellipse"
+File = "ellipse.xd"
