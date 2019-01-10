@@ -8,3 +8,6 @@ export PATH=/tmp/texlive/bin/x86_64-linux:$PATH
 tlmgr install l3kernel l3packages l3experimental
 tlmgr install latex-bin dvisvgm standalone xkeyval algorithms algorithmicx float amsmath siunitx #ifxetex ifpdf ifluatex
 export PATH=/:$PATH
+apt update
+apt install -y npm nodejs
+npm install -g svgo
