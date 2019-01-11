@@ -189,7 +189,7 @@ Now in order to proceed with the algorithm, there are a few helpers needed.
     \EndIf
     \State $a_c \gets \textbf{arccos}(a_c)$
     \If{$u_x v_y < u_y v_x$}
-        \State $a_c \gets a_c$
+        \State $a_c \gets -a_c$
     \EndIf
     \State \Return $a_c$
     \end{algorithmic}
@@ -198,7 +198,7 @@ Now in order to proceed with the algorithm, there are a few helpers needed.
 ```
 </div>
 
-Finally, the arc algorithm takes a step angle, used to determine the number of curves to use in the approximation. However, we can choose a step angle ahead of time that can minimize the error, namely *π/4*. This implies that up to four bezier curves will be used to construct an elliptical arc. If the *Δθ* gotten from the conversion to center parameterization is not a multiple of *π/4*, then there the remaining portion of the arc will have a smaller step angle. The step angle is used to determine the value for *α*, which is used to compute the two control points. In this implementation, I decided to draw the portion of arc for which *Δθ* is a multiple of *π/4* using a precomputed value for *α*, and only drawing the remainder if it exists. This means that in the worst case, I only have to compute *α* once.
+Finally, the arc algorithm takes a step angle, used to determine the number of curves to use in the approximation. However, we can choose a step angle ahead of time that can minimize the error, namely *π/4*. This implies that up to four bezier curves will be used to construct an elliptical arc. If the *Δθ* gotten from the conversion to center parameterization is not a multiple of *π/4*, then there the remaining portion of the arc will have a smaller step angle. The step angle is used to determine the value for *α*, which is used to compute the two control points. In this implementation, I decided to draw the portion of arc for which *Δθ* is a multiple of *π/4* using a precomputed value for *α*, and only drawing the remainder if it exists. This precomputed value for a step angle of *π/4* is 0.26511477349130245. This means that in the worst case, I only have to compute *α* once.
 
 Here is the final algorithm to draw an elliptical arc.
 <div id="proc" class="latex">
@@ -243,7 +243,7 @@ Here is the final algorithm to draw an elliptical arc.
             \State ${e_1}^\prime \gets {e_2}^\prime$
             \State $t \gets t + \frac{\pi}{4}$
         \EndFor
-        \If{$n = \lceil segments \rceil$}
+        \If{$n \neq \lceil segments \rceil$}
             \State $step \gets t - \frac{\pi}{4}$
             \State $t \gets \theta_1 + \Delta\theta$
             \State $\alpha_t \gets$ \textbf{tan}$(\frac{step}{2})$
