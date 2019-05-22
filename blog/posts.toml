@@ -1,19 +1,34 @@
 [[Posts]]
 Route = "/"
-File = "toc.xd"
+File = "toc.html"
+Title = "Table of Contents"
+Description = ""
+Created = 2018-04-24
 
 [[Posts]]
 Route = "/hello-world"
-File = "hello_world.xd"
+File = "hello_world.html"
+Title = "Hello World"
+Description = ""
+Created = 2018-04-24
 
 [[Posts]]
 Route = "/mexdown"
-File = "intro_mexdown.xd"
+File = "intro_mexdown.html"
+Title = "Mexdown"
+Description = "An extensible lightweight markup language"
+Created = 2018-04-24
 
 [[Posts]]
 Route = "/overlapping-tags"
-File = "overlap.xd"
+File = "overlap.html"
+Title = "The Problem of Overlapping Tags"
+Description = ""
+Created = 2018-09-28
 
 [[Posts]]
 Route = "/ellipse"
-File = "ellipse.xd"
+File = "ellipse.html"
+Title = "Approximating an Elliptical Arc with Cubic Bezier Curves"
+Description = ""
+Created = 2019-01-10

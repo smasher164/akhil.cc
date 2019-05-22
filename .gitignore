@@ -8,6 +8,7 @@
 !*.md
 !.gitignore
 !*.xd
+!*.html
 !*.css
 !*.eot
 !*.otf

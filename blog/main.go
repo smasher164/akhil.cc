@@ -1,18 +1,20 @@
 package main
 
 import (
+	"crypto/sha256"
 	"flag"
+	"fmt"
+	"io/ioutil"
 	"log"
 	"net/http"
 	"os"
 	"path"
 	"strings"
-	"sync"
 	"text/template"
+	"time"
 
-	"akhil.cc/mexdown/gen/html"
-	"akhil.cc/mexdown/parser"
 	"github.com/BurntSushi/toml"
+	"github.com/gorilla/feeds"
 )
 
 var site string
@@ -28,8 +30,15 @@ func init() {
 }
 
 type blog struct {
-	posts map[string]string
 	cache map[string][]byte
+	posts []struct {
+		Route       string
+		File        string
+		Title       string
+		Description string
+		Created     time.Time
+	}
+	feed *feeds.Feed
 }
 
 const stub = `<html>
@@ -45,77 +54,47 @@ const stub = `<html>
 
 var tmpl = template.Must(template.New("").Parse(stub))
 
+func (b *blog) init(posts map[string]string) {
+	// load each post from file and into cache
+	for route, fpath := range posts {
+		file, err := os.Open(fpath)
+		if err != nil {
+			log.Println(err)
+			return
+		}
+		defer file.Close()
+		out, err := ioutil.ReadAll(file)
+		if err != nil {
+			log.Print(err)
+			return
+		}
+		b.cache[route] = out
+	}
+	// create atom feed from posts
+	now := time.Now()
+	b.feed = &feeds.Feed{
+		Title:   "blog.akhil.cc",
+		Link:    &feeds.Link{Href: "https://www.blog.akhil.cc"},
+		Author:  &feeds.Author{Name: "Akhil Indurti", Email: "aindurti@gmail.com"},
+		Created: now,
+	}
+	for _, post := range b.posts {
+		b.feed.Items = append(b.feed.Items, &feeds.Item{
+			Title:       post.Title,
+			Link:        &feeds.Link{Href: site + post.Route},
+			Description: post.Description,
+			Created:     post.Created,
+		})
+	}
+}
+
 func (b *blog) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	fpath, ok := b.posts[r.URL.Path]
+	body, ok := b.cache[r.URL.Path]
 	if !ok {
 		http.NotFound(w, r)
 		return
 	}
-	if b, ok := b.cache[r.URL.Path]; ok {
-		tmpl.Execute(w, b)
-		return
-	}
-	file, err := os.Open(fpath)
-	if err != nil {
-		log.Println(err)
-		http.Error(w, "couldn't load post", http.StatusInternalServerError)
-		return
-	}
-	defer file.Close()
-	f, err := parser.Parse(file)
-	if err != nil {
-		log.Print(err)
-		http.Error(w, "couldn't load post", http.StatusInternalServerError)
-		return
-	}
-	out, err := html.Gen(f).Output()
-	if err != nil {
-		log.Print(err)
-		http.Error(w, "couldn't load post", http.StatusInternalServerError)
-		return
-	}
-	b.cache[r.URL.Path] = out
-	tmpl.Execute(w, out)
-}
-
-type cache struct {
-	m          sync.Mutex
-	route2etag map[string]string
-}
-
-func (c *cache) control(h http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		c.m.Lock()
-		defer c.m.Unlock()
-		h.ServeHTTP(w, r)
-		if strings.HasPrefix(path.Ext(r.URL.Path), "woff2") {
-			w.Header().Add("Content-Type", "application/font-woff2")
-		}
-		// tag := c.route2etag[r.URL.Path]
-		// if match := r.Header.Get("If-Modified-Since"); match != "" {
-		// 	if match == tag {
-		// 		w.WriteHeader(http.StatusNotModified)
-		// 		return
-		// 	}
-		// }
-		// if match := r.Header.Get("If-Range"); match != "" {
-		// 	if match == tag {
-		// 		w.WriteHeader(http.StatusNotModified)
-		// 		return
-		// 	}
-		// }
-		// // tag = time.Now().Format(time.RFC1123)
-		// // data := r.URL.Path + time.Now().String()
-		// // hash := xxhash.Sum64String(data)
-		// // tag = fmt.Sprintf("%08x", hash)
-		// h.ServeHTTP(w, r)
-		// w.Header().Set("Cache-Control", "no-cache")
-		// tag = w.Header().Get("Last-Modified")
-		// if tag == "" {
-		// 	tag = time.Now().Format(time.RFC1123)
-		// }
-		// c.route2etag[r.URL.Path] = tag
-	})
+	tmpl.Execute(w, body)
 }
 
 func main() {
@@ -124,8 +103,11 @@ func main() {
 	log.SetFlags(0)
 	var conf struct {
 		Posts []struct {
-			Route string
-			File  string
+			Route       string
+			File        string
+			Title       string
+			Description string
+			Created     time.Time
 		}
 	}
 	if _, err := toml.DecodeFile(file, &conf); err != nil {
@@ -135,13 +117,39 @@ func main() {
 	for _, p := range conf.Posts {
 		posts[p.Route] = dir + "/" + p.File
 	}
-	cache := &cache{route2etag: make(map[string]string)}
-	blog := &blog{posts: posts, cache: make(map[string][]byte)}
+	blog := &blog{cache: make(map[string][]byte), posts: conf.Posts}
+	blog.init(posts)
 	m := http.NewServeMux()
-	m.Handle("/", cache.control(blog))
-	m.Handle("/static/", cache.control(http.StripPrefix("/static/", http.FileServer(http.Dir(static)))))
+	m.Handle("/", blog)
+	h := http.StripPrefix("/static/", http.FileServer(http.Dir(static)))
+	m.HandleFunc("/static/", func(w http.ResponseWriter, r *http.Request) {
+		fpath := path.Join(static, strings.TrimPrefix(r.URL.Path, "/static/"))
+		info, err := os.Stat(fpath)
+		if err != nil {
+			log.Fatal(err)
+		}
+		etag := fmt.Sprintf("%x", sha256.Sum256([]byte(info.ModTime().String())))
+		if match := r.Header.Get("If-None-Match"); match != "" {
+			if strings.Contains(match, etag) {
+				w.WriteHeader(http.StatusNotModified)
+				return
+			}
+		}
+		w.Header().Set("Etag", etag)
+		w.Header().Set("Cache-Control", "max-age=31536000")
+		if strings.HasPrefix(path.Ext(r.URL.Path), "woff2") {
+			w.Header().Set("Content-Type", "application/font-woff2")
+		}
+		h.ServeHTTP(w, r)
+	})
 	m.HandleFunc("/favicon.ico", func(w http.ResponseWriter, r *http.Request) {
 		w.Write(nil)
+	})
+	m.HandleFunc("/robots.txt", func(w http.ResponseWriter, r *http.Request) {
+		w.Write([]byte("Sitemap: https://www.blog.akhil.cc/feed.atom"))
+	})
+	m.HandleFunc("/feed.atom", func(w http.ResponseWriter, r *http.Request) {
+		blog.feed.WriteAtom(w)
 	})
 	http.ListenAndServe(":8080", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.Host != site {
