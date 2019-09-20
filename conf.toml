@@ -3,7 +3,8 @@ Valid = [
 	"akhil.cc", "www.akhil.cc", 
 	"blog.akhil.cc", "www.blog.akhil.cc", 
 	"static.akhil.cc", "www.static.akhil.cc",
-	"tmsim.akhil.cc", "www.tmsim.akhil.cc"
+	"tmsim.akhil.cc", "www.tmsim.akhil.cc",
+    "stay.akhil.cc", "www.stay.akhil.cc"
 ]
 Email = "aindurti@gmail.com"
 [[Hosts]]
@@ -21,3 +22,6 @@ Target = "http://127.0.0.1:8083"
 [[Hosts]]
 Route = "www.tmsim.akhil.cc/"
 Target = "http://127.0.0.1:8084"
+[[Hosts]]
+Route = "www.stay.akhil.cc/"
+Target = "http://127.0.0.1:8085"
