@@ -51,7 +51,10 @@ type serveMux struct {
 func (mux *serveMux) Handle(pattern string, handler http.Handler) {
 	mux.mu.Lock()
 	defer mux.mu.Unlock()
-	r := regexp.MustCompile(pattern)
+	r, err := regexp.Compile(pattern)
+	if err != nil {
+		log.Fatalln(err)
+	}
 	mux.handlers = append(mux.handlers, struct {
 		r *regexp.Regexp
 		h http.Handler
@@ -118,9 +121,8 @@ func main() {
 		log.Fatalln(err)
 	}
 	cert := &autocert.Manager{
-		Cache:  autocert.DirCache(conf.CacheDir),
-		Prompt: autocert.AcceptTOS,
-		// HostPolicy: autocert.HostWhitelist(conf.Valid...),
+		Cache:      autocert.DirCache(conf.CacheDir),
+		Prompt:     autocert.AcceptTOS,
 		HostPolicy: wildcardWhitelist(conf.Valid...),
 		Email:      conf.Email,
 	}
