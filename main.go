@@ -1,13 +1,17 @@
 package main
 
 import (
+	"context"
 	"crypto/tls"
 	"flag"
+	"fmt"
 	"log"
 	"net/http"
 	"net/http/httputil"
 	"net/url"
+	"regexp"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/BurntSushi/toml"
@@ -36,15 +40,42 @@ type host struct {
 	Target string
 }
 
+type serveMux struct {
+	mu       sync.RWMutex
+	handlers []struct {
+		r *regexp.Regexp
+		h http.Handler
+	}
+}
+
+func (mux *serveMux) Handle(pattern string, handler http.Handler) {
+	mux.mu.Lock()
+	defer mux.mu.Unlock()
+	r := regexp.MustCompile(pattern)
+	mux.handlers = append(mux.handlers, struct {
+		r *regexp.Regexp
+		h http.Handler
+	}{r, handler})
+}
+
+func (mux *serveMux) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	mux.mu.RLock()
+	defer mux.mu.RUnlock()
+	for _, m := range mux.handlers {
+		if m.r.MatchString(r.Host+r.URL.Path) || m.r.MatchString(r.Host) {
+			m.h.ServeHTTP(w, r)
+			return
+		}
+	}
+	http.NotFound(w, r)
+}
+
 func makeProxy(hosts []host) http.Handler {
-	m := http.NewServeMux()
+	m := new(serveMux)
 	for _, h := range hosts {
 		utarget, err := url.Parse(h.Target)
 		if err != nil {
 			log.Fatalln(err)
-		}
-		if strings.HasPrefix(h.Route, "/") {
-			h.Route = site + h.Route
 		}
 		m.Handle(h.Route, httputil.NewSingleHostReverseProxy(utarget))
 	}
@@ -57,6 +88,20 @@ func makeProxy(hosts []host) http.Handler {
 			m.ServeHTTP(w, r)
 		}
 	})
+}
+
+func wildcardWhitelist(hostPatterns ...string) autocert.HostPolicy {
+	pattern := strings.Join(hostPatterns, "|")
+	re, err := regexp.Compile(pattern)
+	if err != nil {
+		log.Fatalln(err)
+	}
+	return func(_ context.Context, host string) error {
+		if !re.MatchString(host) {
+			return fmt.Errorf("acme/autocert: host %q not configured in HostWhitelist", host)
+		}
+		return nil
+	}
 }
 
 func main() {
@@ -73,9 +118,10 @@ func main() {
 		log.Fatalln(err)
 	}
 	cert := &autocert.Manager{
-		Cache:      autocert.DirCache(conf.CacheDir),
-		Prompt:     autocert.AcceptTOS,
-		HostPolicy: autocert.HostWhitelist(conf.Valid...),
+		Cache:  autocert.DirCache(conf.CacheDir),
+		Prompt: autocert.AcceptTOS,
+		// HostPolicy: autocert.HostWhitelist(conf.Valid...),
+		HostPolicy: wildcardWhitelist(conf.Valid...),
 		Email:      conf.Email,
 	}
 	var redirMux http.ServeMux

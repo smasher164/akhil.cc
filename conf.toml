@@ -1,27 +1,35 @@
 CacheDir = "/certs"
 Valid = [
-	"akhil.cc", "www.akhil.cc", 
-	"blog.akhil.cc", "www.blog.akhil.cc", 
-	"static.akhil.cc", "www.static.akhil.cc",
-	"tmsim.akhil.cc", "www.tmsim.akhil.cc",
-    "stay.akhil.cc", "www.stay.akhil.cc"
+	'^akhil\.cc$', '^www\.akhil\.cc$', 
+	'^blog\.akhil\.cc$', '^www\.blog\.akhil\.cc$', 
+	'^static\.akhil\.cc$', '^www\.static\.akhil\.cc$',
+	'^tmsim\.akhil\.cc$', '^www\.tmsim\.akhil\.cc$',
+    '^stay\.akhil\.cc$', '$www\.stay\.akhil\.cc$',
+    '^staging\.stay\.akhil\.cc$', '^www\.staging\.stay\.akhil\.cc$',
+    '^\d+\.staging\.stay\.akhil\.cc$', '^www\.\d+\.staging\.stay\.akhil\.cc$'
 ]
 Email = "aindurti@gmail.com"
 [[Hosts]]
-Route = "www.blog.akhil.cc/"
+Route = '^www\.blog\.akhil\.cc/'
 Target = "http://127.0.0.1:8080"
 [[Hosts]]
-Route = "/mexdown/"
+Route = '^www\.akhil\.cc/mexdown(/.*)?$'
 Target = "http://127.0.0.1:8081"
 [[Hosts]]
-Route = "www.akhil.cc/"
+Route = '^www\.akhil\.cc/$'
 Target = "http://127.0.0.1:8082"
 [[Hosts]]
-Route = "www.static.akhil.cc/"
+Route = '^www\.static\.akhil\.cc/$'
 Target = "http://127.0.0.1:8083"
 [[Hosts]]
-Route = "www.tmsim.akhil.cc/"
+Route = '^www\.tmsim\.akhil\.cc/$'
 Target = "http://127.0.0.1:8084"
 [[Hosts]]
-Route = "www.stay.akhil.cc/"
+Route = '^www\.stay\.akhil\.cc/$'
 Target = "http://127.0.0.1:8085"
+[[Hosts]]
+Route = '^www\.staging\.stay\.akhil\.cc/$'
+Target = "http://127.0.0.1:8086"
+[[Hosts]]
+Route = '^www\.\d+\.staging\.stay\.akhil\.cc/$'
+Target = "http://127.0.0.1:8086"
