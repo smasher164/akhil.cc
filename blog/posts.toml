@@ -39,3 +39,10 @@ File = "coroutine_stack.html"
 Title = "Stackful Coroutines and the Curse of ABI Compatibility"
 Description = ""
 Created = 2019-06-12
+
+[[Posts]]
+Route = "/os-notes-booting"
+File = "os1.html"
+Title = "Notes on OS Construction: Booting (WIP)"
+Description = ""
+Created = 2019-09-30

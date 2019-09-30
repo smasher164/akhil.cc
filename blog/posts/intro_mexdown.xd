@@ -1,6 +1,6 @@
 <style>
 	p {
-		white-space: pre-line;
+		white-space: pre-wrap;
 	}
 	li:not(.bullet) > span::after {
 		content: ".";
@@ -34,21 +34,34 @@ Here are some of its properties:
 	- Useful for dynamically generating documents server-side.
 -[4] Simplified and easy to parse markup
 -[5] Overlapping format tags.
-	- The represention of text formats allows users to write overlapping format syntax like so:
-	- `--This is struckthrough. **This is both.-- This is bolded.**`, and produce the following
-	- --This is struckthrough. **This is both.-- This is bolded.**, instead of writing
+	- The represention of text formats allows users to write overlapping format
+	  syntax like so:
+	- `--This is struckthrough. **This is both.-- This is bolded.**`, and
+	  produce the following
+	- --This is struckthrough. **This is both.-- This is bolded.**, instead of
+	  writing
 	- `--This is struckthrough. **This is both.**--** This is bolded.**`
 -[7] List items and paragraphs can continue onto the next line.
-	 Unless a line is empty or prefixed with '-', it is part of the previous list item.
+	 Unless a line is empty or prefixed with '-', it is part of the previous
+	 list item.
 
 ### Directives
-Perhaps the most important feature of mexdown is the *directive*. A directive consists of **`n >= 3`** consecutive backticks and an executable command. Its body follows directly after, terminated by another sequence of **`n`** backticks. Here is an example used to include a latex equation into a document.
+	Perhaps the most important feature of mexdown is the *directive*. A
+directive consists of **`n >= 3`** consecutive backticks and an executable
+command. Its body follows directly after, terminated by another sequence of
+**`n`** backticks. Here is an example used to include a latex equation into a
+document.
 ````
 ```svglatex --inline
 $\cos (2\theta) = \cos^2 \theta - \sin^2 \theta$
 ```
 ````
-In this example, the body is an inline latex equation that is sent verbatim into [svglatex](https://github.com/smasher164/svglatex), a small utility command I wrote that converts a latex document into SVG using [dvisvgm](https://github.com/mgieseki/dvisvgm). The output of svglatex then replaces everything between the triple-backquotes. Here is the result after compilation:
+	In this example, the body is an inline latex equation that is sent verbatim
+into [svglatex](https://github.com/smasher164/svglatex), a small utility command
+I wrote that converts a latex document into SVG using
+[dvisvgm](https://github.com/mgieseki/dvisvgm). The output of svglatex then
+replaces everything between the triple-backquotes. Here is the result after
+compilation:
 
 <div class="latex"> 
 ```svglatex --inline
@@ -56,17 +69,32 @@ $\cos (2\theta) = \cos^2 \theta - \sin^2 \theta$
 ```
 </div>
 
-One neat feature is if I want to display triple-backquotes like I do above, I simply wrap it in **3+1=4** backquotes. A directive without an executable command is simply preformatted text.
+	One neat feature is if I want to display triple-backquotes like I do above,
+I simply wrap it in **3+1=4** backquotes. A directive without an executable
+command is simply preformatted text.
 
-One can make a directive for any text they want to present, because a directive is simply the output of a process that exists on their system. One can conceivably create directives that include images, generate diagrams, include interactive models, etc...
+	One can make a directive for any text they want to present, because a
+directive is simply the output of a process that exists on their system. One can
+conceivably create directives that include images, generate diagrams, include
+interactive models, etc...
 
 ### Support for Multiple Backends
-The parser is completely decoupled from the backend document generators. A major flaw in many lightweight markup languages is that they narrowly target a specific language for code generation, like HTML. mexdown aims to be language-agnostic in its construction, so the parser is oblivious to the subsequent phases of compilation. It's sole job is to produce a syntax tree representation of the document. Details like html escaping and overlapping markup are treated in the backend, and don't pollute the parser. Although I currently only have an html backend, my plan is to create a Google Slides backend to automatically generate a presentation.
+	The parser is completely decoupled from the backend document generators. A
+major flaw in many lightweight markup languages is that they narrowly target a
+specific language for code generation, like HTML. mexdown aims to be
+language-agnostic in its construction, so the parser is oblivious to the
+subsequent phases of compilation. It's sole job is to produce a syntax tree
+representation of the document. Details like html escaping and overlapping
+markup are treated in the backend, and don't pollute the parser. Although I
+currently only have an html backend, my plan is to create a Google Slides
+backend to automatically generate a presentation.
 
 ### Also a Library
-Although mexdown works on the command line with various options and configurations, it can equivalently be used as a Go library. This is particularly useful for server-side document-generation.
+	Although mexdown works on the command line with various options and
+configurations, it can equivalently be used as a Go library. This is
+particularly useful for server-side document-generation.
 ```
-ast := parse.MustParse(reader)
+ast := parser.MustParse(reader)
 gnr := html.Gen(ast)
 gnr.Stdout = os.Stdout
 if err := gnr.Run(); err != nil {
@@ -75,4 +103,5 @@ if err := gnr.Run(); err != nil {
 ```
 
 ### Contributing
-I hope you will use this library and welcome your contributions. Please file issues at [github.com/smasher164/mexdown](https://github.com/smasher164/mexdown).
+	I hope you will use this library and welcome your contributions. Please file
+issues at [github.com/smasher164/mexdown](https://github.com/smasher164/mexdown).

@@ -1,5 +1,11 @@
 # blog.akhil.cc
 
+```post /os-notes-booting
+Notes on OS Construction: Booting (WIP)
+
+September 30, 2019
+```
+
 ```post /stackful-coroutines
 Stackful Coroutines and the Curse of ABI Compatibility
 

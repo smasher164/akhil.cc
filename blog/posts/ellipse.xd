@@ -1,63 +1,87 @@
 <style>
-    p {
-        white-space: pre-line;
-    }
-    .latex > svg {
-        width: auto;
-        height: auto;
-    }
-    #proc {
-        width:  800px;
-    }
+	p {
+		white-space: pre-wrap;
+	}
+	.latex > svg {
+		width: auto;
+		height: auto;
+	}
+	.latex {
+		max-width: 26em;
+	}
 </style>
 # Approximating an Elliptical Arc with Cubic Bezier Curves
 #### January 10, 2019
 
-In my recent work to create a cross-platform gui abstraction, I found that Core Graphics on MacOS does not offer a convenient way to draw non-axis-aligned elliptical arcs, like the [svg command](svgspec1). There are a number of approaches I could take to address this problem. For instance, I can use the midpoint ellipse algorithm to rasterize an ellipse onto a bitmap to render onto the screen. Given that I'm implementing a core graphics abstraction, I would have to somehow integrate all of the path stroke and fill effects, as well as anti-aliasing if that is given as an option. Moreover, if core graphics were to use the GPU for rasterization, then I would have to write the rasterizer in Metal, to achieve performance parity. But this is all getting very messy.
+	In my recent work to create a cross-platform gui abstraction, I found that
+Core Graphics on MacOS does not offer a convenient way to draw non-axis-aligned
+elliptical arcs, like the [svg command](svgspec1). There are a number of
+approaches I could take to address this problem. For instance, I can use the
+midpoint ellipse algorithm to rasterize an ellipse onto a bitmap to render onto
+the screen. Given that I'm implementing a core graphics abstraction, I would
+have to somehow integrate all of the path stroke and fill effects, as well as
+anti-aliasing if that is given as an option. Moreover, if core graphics were to
+use the GPU for rasterization, then I would have to write the rasterizer in
+Metal, to achieve performance parity. But this is all getting very messy.
 
-Another option, but not one I went with, is to use the axis-aligned circle-drawing API provided by core graphics, and applying matrix transforms and clipping paths to the path to turn it into an ellipse. This offers a simple implementation, and one I may pursue in the future. However the implementation this post discusses will turn an ellipse into a series of cubic bezier curves.
+	Another option, but not one I went with, is to use the axis-aligned
+circle-drawing API provided by core graphics, and applying matrix transforms and
+clipping paths to the path to turn it into an ellipse. This offers a simple
+implementation, and one I may pursue in the future. However the implementation
+this post discusses will turn an ellipse into a series of cubic bezier curves.
 
-Cubic bezier curves are functions of order 3 that can be defined by their endpoints and two control points. Being polynomials, they cannot represent conic sections, like circles and ellipses. Note, a rational function can represent conics, which are used by some graphics implementations (see [NURBS](NURBS)). However, one can use a sequence of higher order polynomials to approximate an ellipse. At a high level, the newly generated control points are gotten by combining the arc's parametric equation and derivative evaluated at the endpoints, as well as the solution to a system of equations evaluated using the angle from the arc to the center of the ellipse. A detailed derivation of the algorithm is given by Maisonobe in [this](Maisonobe) paper.
+	Cubic bezier curves are functions of order 3 that can be defined by their
+endpoints and two control points. Being polynomials, they cannot represent conic
+sections, like circles and ellipses. Note, a rational function can represent
+conics, which are used by some graphics implementations (see [NURBS](NURBS)).
+However, one can use a sequence of higher order polynomials to approximate an
+ellipse. At a high level, the newly generated control points are gotten by
+combining the arc's parametric equation and derivative evaluated at the
+endpoints, as well as the solution to a system of equations evaluated using the
+angle from the arc to the center of the ellipse. A detailed derivation of the
+algorithm is given by Maisonobe in [this](Maisonobe) paper.
 
-In order to implement the SVG elliptical arc api, one needs to convert from endpoint parameterization to center parameterization. The endpoint syntax is defined by 
-<div style="width:700px;" class="latex">
+	In order to implement the SVG elliptical arc api, one needs to convert from
+endpoint parameterization to center parameterization. The endpoint syntax is
+defined by 
+<div style="max-width:35em;" class="latex">
 ```svglatex
 \documentclass{minimal}
 \usepackage{amsmath}
 \usepackage{siunitx}
 \begin{document}
 \begin{enumerate}
-    \item $(x_1, y_1), (x_2, y_2)$: start and end points of the arc
-    \item $r_x, r_y$: radii of the ellipse. If they are equal, then it is a circle.
-    \item $\varphi$: angle from x-axis to x-axis of ellipse.
-    \item $f_A$: flag to determine if the arc spans $\ang{0}$ or $\leq \ang{180}$. Otherwise the arc spans $> \ang{180}$.
-    \item $f_S$: flag to determine if the arc sweeps through decreasing angles or increasing angles.
+	\item $(x_1, y_1), (x_2, y_2)$: start and end points of the arc
+	\item $r_x, r_y$: radii of the ellipse. If they are equal, then it is a circle.
+	\item $\varphi$: angle from x-axis to x-axis of ellipse.
+	\item $f_A$: flag to determine if the arc spans $\ang{0}$ or $\leq \ang{180}$. Otherwise the arc spans $> \ang{180}$.
+	\item $f_S$: flag to determine if the arc sweeps through decreasing angles or increasing angles.
 \end{enumerate}
 \end{document}
 ```
 </div>
 
-Center parameterization on the other hand is defined by
-<div style="width:600px;" class="latex">
+	Center parameterization on the other hand is defined by
+<div style="max-width:35em;" class="latex">
 ```svglatex
 \documentclass{minimal}
 \usepackage{amsmath}
 \usepackage{siunitx}
 \begin{document}
 \begin{enumerate}
-    \item $(c_x, c_y)$: the center of the ellipse.
-    \item $r_x, r_y$: radii of the ellipse.
-    \item $\varphi$: angle from x-axis to x-axis of ellipse.
-    \item $\theta_1$: angle to the beginning of the arc.
-    \item $\Delta\theta$: difference between angle to the end of the arc and the beginning.
+	\item $(c_x, c_y)$: the center of the ellipse.
+	\item $r_x, r_y$: radii of the ellipse.
+	\item $\varphi$: angle from x-axis to x-axis of ellipse.
+	\item $\theta_1$: angle to the beginning of the arc.
+	\item $\Delta\theta$: difference between angle to the end of the arc and the beginning.
 \end{enumerate}
 \end{document}
 ```
 </div>
 
 
-First, we must correct for out-of-range radii and take their absolute value.
-<div style="width:300px;" class="latex">
+	First, we must correct for out-of-range radii and take their absolute value.
+<div style="max-width:18em;" class="latex">
 ```svglatex
 \documentclass{minimal}
 \usepackage[plain]{algorithm}
@@ -69,193 +93,265 @@ First, we must correct for out-of-range radii and take their absolute value.
 \renewcommand{\thealgorithm}{}
 \floatname{algorithm}{Center}
 \begin{algorithm}
-    \begin{algorithmic}
-        \If{$start_x = end_x$ AND $start_y = end_y$}
-            \State \Return
-        \EndIf
-        \If{$r_x = 0$ OR $r_y = 0$}
-            \State $\textbf{Line}(start, end)$
-            \State \Return
-        \EndIf
-        \State $r \gets (|r_x|, |r_y|)$
-    \end{algorithmic}
+	\begin{algorithmic}
+		\If{$start_x = end_x$ AND $start_y = end_y$}
+			\State \Return
+		\EndIf
+		\If{$r_x = 0$ OR $r_y = 0$}
+			\State $\textbf{Line}(start, end)$
+			\State \Return
+		\EndIf
+		\State $r \gets (|r_x|, |r_y|)$
+	\end{algorithmic}
 \end{algorithm}
 \end{document}
 ```
 </div>
 
-The W3C provides an [algorithm](conversion) to convert from endpoint to center parameterization. This algorithm however has a few issues when taking floating-point arguments, resulting in `NaN`s for certain arguments to `sqrt` or `arccos`. [This](floatfix) blog post from Musing Monday describes the fixes applied below.
+	The W3C provides an [algorithm](conversion) to convert from endpoint to
+center parameterization. This algorithm however has a few issues when taking
+floating-point arguments, resulting in `NaN`s for certain arguments to `sqrt` or
+`arccos`. [This](floatfix) blog post from Musing Monday describes the fixes
+applied below.
 
-<div id="proc" class="latex">
+<div class="latex">
 ```svglatex
 \documentclass{minimal}
-\usepackage{algorithm}
+\usepackage[boxed]{algorithm}
 \usepackage{algpseudocode}
 \usepackage{amsmath}
+
+\makeatletter
+\newcommand\fs@boxedtopcap{\def\@fs@cfont{\bfseries}\let\@fs@capt\floatc@plain
+  \def\@fs@pre{\setbox\@currbox\vbox{\hbadness10000
+	\moveleft3.4pt\vbox{\advance\hsize by6.8pt
+	  \hrule \hbox to\hsize{\vrule\kern3pt
+		\vbox{\kern3pt\box\@currbox\kern3pt}\kern3pt\vrule}\hrule}}}%
+  \def\@fs@mid{\kern2pt}%
+  \def\@fs@post{}\let\@fs@iftopcapt\iftrue}
+\makeatother
+\floatstyle{boxedtopcap}
+\restylefloat{algorithm}
+
+
 \renewcommand{\algorithmicrequire}{\textbf{Input:}}
 \renewcommand{\algorithmicensure}{\textbf{Output:}}
 \begin{document}
 \renewcommand{\thealgorithm}{}
 \floatname{algorithm}{Center}
-\begin{algorithm}
-    \begin{algorithmic}
-    \caption{Convert from endpoint to center parameterization}
-    \Require $start$, $r$, $\varphi$, $f_A$, $f_S$, $end$
-    \Ensure $r, c, \theta_1, \Delta\theta$
-    \State $cos\varphi \gets$ \textbf{cos}$(\varphi)$
-    \State $sin\varphi \gets$ \textbf{sin}$(\varphi)$
-    \State $x_{half} = \frac{start_x - end_x}{2}$
-    \State $y_{half} = \frac{start_y - end_y}{2}$
-    \State $x_1^\prime \gets x_{half} cos\varphi + y_{half} sin\varphi$
-    \State $y_1^\prime \gets -x_{half} sin\varphi + y_{half} cos\varphi$
-    \State $r_2 \gets ({r_x}^2, {r_y}^2)$
-    \State $x_{12}^\prime \gets {x_1^\prime}^2$
-    \State $y_{12}^\prime \gets {y_1^\prime}^2$
-    \State $c_r \gets \frac{x_{12}^\prime}{r_{2_x}} + \frac{y_{12}^\prime}{r_{2_y}}$
-    \If{$c_r > 1$}
-        \State $c_r \gets \sqrt{c_r}$
-        \State $r \gets (c_r r_x , c_r r_y)$
-        \State $r_2 \gets ({r_x}^2, {r_y}^2)$
-    \EndIf
-    \State $d_q \gets {r_2}_x y_{12}^\prime + {r_2}_y x_{12}^\prime$
-    \State $p_q \gets \frac{{r_2}_x {r_2}_y - d_q}{d_q}$
-    \State $s_c \gets \sqrt{\textbf{max}(0,p_q)}$
-    \If{$f_A = f_S$}
-        \State $s_c \gets -s_c$
-    \EndIf
-    \State $c^\prime \gets (\frac{r_x s_c y_1^\prime}{r_y}, \frac{-r_y s_c x_1^\prime}{r_x})$
-    \State $c_x \gets c_x^\prime cos\varphi - c_y^\prime sin\varphi + \frac{start_x + end_x}{2}$
-    \State $c_y \gets c_x^\prime sin\varphi + c_y^\prime cos\varphi + \frac{start_y + end_y}{2}$
-    \State $v \gets (\frac{x_1^\prime - c_x^\prime}{r_x}, \frac{y_1^\prime - c_y^\prime}{r_y})$
-    \State $\theta_1 \gets \textbf{Angle}((1,0), v)$
-    \State $\Delta\theta \gets \textbf{Angle}(v, (\frac{-x_1^\prime - c_x^\prime}{r_x}, \frac{-y_1^\prime - c_y^\prime}{r_y}))$ \textbf{mod} $2\pi$
-    \If{$\neg f_S$}
-        \State $\Delta\theta \gets \Delta\theta - 2\pi$
-    \EndIf
-    \State \Return $r, (c_x, c_y), \theta_1, \Delta\theta$
-    \end{algorithmic}
+\makebox[\linewidth]{
+\begin{minipage}{\dimexpr\linewidth-20em}
+\begin{algorithm}[H]
+	\begin{algorithmic}
+	\caption{Convert from endpoint to center parameterization}
+	\Require $start$, $r$, $\varphi$, $f_A$, $f_S$, $end$
+	\Ensure $r, c, \theta_1, \Delta\theta$
+	\State $cos\varphi \gets$ \textbf{cos}$(\varphi)$
+	\State $sin\varphi \gets$ \textbf{sin}$(\varphi)$
+	\State $x_{half} = \frac{start_x - end_x}{2}$
+	\State $y_{half} = \frac{start_y - end_y}{2}$
+	\State $x_1^\prime \gets x_{half} cos\varphi + y_{half} sin\varphi$
+	\State $y_1^\prime \gets -x_{half} sin\varphi + y_{half} cos\varphi$
+	\State $r_2 \gets ({r_x}^2, {r_y}^2)$
+	\State $x_{12}^\prime \gets {x_1^\prime}^2$
+	\State $y_{12}^\prime \gets {y_1^\prime}^2$
+	\State $c_r \gets \frac{x_{12}^\prime}{r_{2_x}} + \frac{y_{12}^\prime}{r_{2_y}}$
+	\If{$c_r > 1$}
+		\State $c_r \gets \sqrt{c_r}$
+		\State $r \gets (c_r r_x , c_r r_y)$
+		\State $r_2 \gets ({r_x}^2, {r_y}^2)$
+	\EndIf
+	\State $d_q \gets {r_2}_x y_{12}^\prime + {r_2}_y x_{12}^\prime$
+	\State $p_q \gets \frac{{r_2}_x {r_2}_y - d_q}{d_q}$
+	\State $s_c \gets \sqrt{\textbf{max}(0,p_q)}$
+	\If{$f_A = f_S$}
+		\State $s_c \gets -s_c$
+	\EndIf
+	\State $c^\prime \gets (\frac{r_x s_c y_1^\prime}{r_y}, \frac{-r_y s_c x_1^\prime}{r_x})$
+	\State $c_x \gets c_x^\prime cos\varphi - c_y^\prime sin\varphi + \frac{start_x + end_x}{2}$
+	\State $c_y \gets c_x^\prime sin\varphi + c_y^\prime cos\varphi + \frac{start_y + end_y}{2}$
+	\State $v \gets (\frac{x_1^\prime - c_x^\prime}{r_x}, \frac{y_1^\prime - c_y^\prime}{r_y})$
+	\State $\theta_1 \gets \textbf{Angle}((1,0), v)$
+	\State $\Delta\theta \gets \textbf{Angle}(v, (\frac{-x_1^\prime - c_x^\prime}{r_x}, \frac{-y_1^\prime - c_y^\prime}{r_y}))$ \textbf{mod} $2\pi$
+	\If{$\neg f_S$}
+		\State $\Delta\theta \gets \Delta\theta - 2\pi$
+	\EndIf
+	\State \Return $r, (c_x, c_y), \theta_1, \Delta\theta$
+	\end{algorithmic}
 \end{algorithm}
+\end{minipage}}
 \end{document}
 ```
 </div>
 
-Now in order to proceed with the algorithm, there are a few helpers needed.
-<div id="proc" class="latex">
+	Now in order to proceed with the algorithm, there are a few helpers needed.
+<div class="latex">
 ```svglatex
 \documentclass{minimal}
-\usepackage{algorithm}
+\usepackage[boxed]{algorithm}
 \usepackage{algpseudocode}
 \usepackage{amsmath}
+
+\makeatletter
+\newcommand\fs@boxedtopcap{\def\@fs@cfont{\bfseries}\let\@fs@capt\floatc@plain
+  \def\@fs@pre{\setbox\@currbox\vbox{\hbadness10000
+	\moveleft3.4pt\vbox{\advance\hsize by6.8pt
+	  \hrule \hbox to\hsize{\vrule\kern3pt
+		\vbox{\kern3pt\box\@currbox\kern3pt}\kern3pt\vrule}\hrule}}}%
+  \def\@fs@mid{\kern2pt}%
+  \def\@fs@post{}\let\@fs@iftopcapt\iftrue}
+\makeatother
+\floatstyle{boxedtopcap}
+\restylefloat{algorithm}
+
 \renewcommand{\algorithmicrequire}{\textbf{Input:}}
 \renewcommand{\algorithmicensure}{\textbf{Output:}}
 \begin{document}
+\begin{flushleft}
 \renewcommand{\thealgorithm}{}
 \floatname{algorithm}{Center}
 \floatname{algorithm}{E}
-\begin{algorithm}
-    \begin{algorithmic}
-    \caption{Ellipse parametric equation}
-    \Require $c$, $r$, $cos\varphi$, $sin\varphi$, $t$
-    \Ensure $(x,y)$
-    \State $a \gets r_x\textbf{cos}(t)$
-    \State $b \gets r_y\textbf{sin}(t)$
-    \State \Return $(c_x + a cos\varphi - b sin\varphi, c_y + a sin\varphi - b cos\varphi)$
-    \end{algorithmic}
+\makebox[\linewidth]{
+\begin{minipage}{\dimexpr\linewidth-21em}
+\begin{algorithm}[H]
+	\begin{algorithmic}
+	\caption{Ellipse parametric equation}
+	\Require $c$, $r$, $cos\varphi$, $sin\varphi$, $t$
+	\Ensure $(x,y)$
+	\State $a \gets r_x\textbf{cos}(t)$
+	\State $b \gets r_y\textbf{sin}(t)$
+	\State \Return $(c_x + a cos\varphi - b sin\varphi, c_y + a sin\varphi - b cos\varphi)$
+	\end{algorithmic}
 \end{algorithm}
+\end{minipage}}
 \floatname{algorithm}{E$^\prime$}
-\begin{algorithm}
-    \begin{algorithmic}
-    \caption{Derivative of ellipse parametric equation}
-    \Require $c$, $r$, $cos\varphi$, $sin\varphi$, $t$
-    \Ensure $(dx,dy)$
-    \State $a \gets -r_x\textbf{cos}(t)$
-    \State $b \gets r_y\textbf{sin}(t)$
-    \State \Return $(a cos\varphi - b sin\varphi, a sin\varphi + b cos\varphi)$
-    \end{algorithmic}
+\makebox[\linewidth]{
+\begin{minipage}{\dimexpr\linewidth-21em}
+\begin{algorithm}[H]
+	\begin{algorithmic}
+	\caption{Derivative of ellipse parametric equation}
+	\Require $c$, $r$, $cos\varphi$, $sin\varphi$, $t$
+	\Ensure $(dx,dy)$
+	\State $a \gets -r_x\textbf{cos}(t)$
+	\State $b \gets r_y\textbf{sin}(t)$
+	\State \Return $(a cos\varphi - b sin\varphi, a sin\varphi + b cos\varphi)$
+	\end{algorithmic}
 \end{algorithm}
+\end{minipage}}
 \floatname{algorithm}{Angle}
-\begin{algorithm}
-    \begin{algorithmic}
-    \caption{Determine angle (in radians) between two vectors}
-    \Require $u$, $v$
-    \Ensure $a_c$
-    \State $n_u \gets \sqrt{u_x u_x + u_y u_y}$
-    \State $n_v \gets \sqrt{v_x v_x + v_y v_y}$
-    \State $a_c \gets \frac{u_x v_x + u_y v_y}{n_u n_v}$
-    \If{$a_c > 1$}
-        \State $a_c \gets 1$
-    \ElsIf{$a_c < -1$}
-        \State $a_c = -1$
-    \EndIf
-    \State $a_c \gets \textbf{arccos}(a_c)$
-    \If{$u_x v_y < u_y v_x$}
-        \State $a_c \gets -a_c$
-    \EndIf
-    \State \Return $a_c$
-    \end{algorithmic}
+\makebox[\linewidth]{
+\begin{minipage}{\dimexpr\linewidth-21em}
+\begin{algorithm}[H]
+	\begin{algorithmic}
+	\caption{Determine angle (in radians) between two vectors}
+	\Require $u$, $v$
+	\Ensure $a_c$
+	\State $n_u \gets \sqrt{u_x u_x + u_y u_y}$
+	\State $n_v \gets \sqrt{v_x v_x + v_y v_y}$
+	\State $a_c \gets \frac{u_x v_x + u_y v_y}{n_u n_v}$
+	\If{$a_c > 1$}
+		\State $a_c \gets 1$
+	\ElsIf{$a_c < -1$}
+		\State $a_c = -1$
+	\EndIf
+	\State $a_c \gets \textbf{arccos}(a_c)$
+	\If{$u_x v_y < u_y v_x$}
+		\State $a_c \gets -a_c$
+	\EndIf
+	\State \Return $a_c$
+	\end{algorithmic}
 \end{algorithm}
+\end{minipage}}
+\end{flushleft}
 \end{document}
 ```
 </div>
 
-Finally, the arc algorithm takes a step angle, used to determine the number of curves to use in the approximation. However, we can choose a step angle ahead of time that can minimize the error, namely *π/4*. This implies that up to four bezier curves will be used to construct an elliptical arc. If the *Δθ* gotten from the conversion to center parameterization is not a multiple of *π/4*, then there the remaining portion of the arc will have a smaller step angle. The step angle is used to determine the value for *α*, which is used to compute the two control points. In this implementation, I decided to draw the portion of arc for which *Δθ* is a multiple of *π/4* using a precomputed value for *α*, and only drawing the remainder if it exists. This precomputed value for a step angle of *π/4* is 0.26511477349130245. This means that in the worst case, I only have to compute *α* once.
+	Finally, the arc algorithm takes a step angle, used to determine the number
+of curves to use in the approximation. However, we can choose a step angle ahead
+of time that can minimize the error, namely *π/4*. This implies that up to four
+bezier curves will be used to construct an elliptical arc. If the *Δθ* gotten
+from the conversion to center parameterization is not a multiple of *π/4*, then
+there the remaining portion of the arc will have a smaller step angle. The step
+angle is used to determine the value for *α*, which is used to compute the two
+control points. In this implementation, I decided to draw the portion of arc for
+which *Δθ* is a multiple of *π/4* using a precomputed value for *α*, and only
+drawing the remainder if it exists. This precomputed value for a step angle of
+*π/4* is 0.26511477349130245. This means that in the worst case, I only have to
+compute *α* once.
 
-Here is the final algorithm to draw an elliptical arc.
-<div id="proc" class="latex">
+	Here is the final algorithm to draw an elliptical arc.
+<div class="latex">
 ```svglatex
 \documentclass{minimal}
-\usepackage{algorithm}
+\usepackage[boxed]{algorithm}
 \usepackage{algpseudocode}
 \usepackage{amsmath}
+
+\makeatletter
+\newcommand\fs@boxedtopcap{\def\@fs@cfont{\bfseries}\let\@fs@capt\floatc@plain
+  \def\@fs@pre{\setbox\@currbox\vbox{\hbadness10000
+	\moveleft3.4pt\vbox{\advance\hsize by6.8pt
+	  \hrule \hbox to\hsize{\vrule\kern3pt
+		\vbox{\kern3pt\box\@currbox\kern3pt}\kern3pt\vrule}\hrule}}}%
+  \def\@fs@mid{\kern2pt}%
+  \def\@fs@post{}\let\@fs@iftopcapt\iftrue}
+\makeatother
+\floatstyle{boxedtopcap}
+\restylefloat{algorithm}
+
 \renewcommand{\algorithmicrequire}{\textbf{Input:}}
 \renewcommand{\algorithmicensure}{\textbf{Output:}}
 \begin{document}
 \renewcommand{\thealgorithm}{}
 \floatname{algorithm}{Arc}
-\begin{algorithm}
-    \begin{algorithmic}
-        \caption{Draw SVG elliptical arc with cubic bezier curves}
-        \Require $start$, $r$, $\varphi$, $f_A$, $f_S$, $end$
-        \If{$start_x = end_x$ AND $start_y = end_y$}
-            \State \Return
-        \EndIf
-        \If{$r_x = 0$ OR $r_y = 0$}
-            \State $\textbf{Line}(start, end)$
-            \State \Return
-        \EndIf
-        \State $r \gets (|r_x|, |r_y|)$
-        \State $r, c, \theta_1, \Delta\theta \gets$ \textbf{Center}$(start, r, \varphi, f_A, f_S, end)$
-        \State $segments \gets \frac{\Delta\theta}{\frac{\pi}{4}}$
-        \State $n \gets \lfloor segments \rfloor$
-        \State $cos\varphi \gets$ \textbf{cos}$(\varphi)$
-        \State $sin\varphi \gets$ \textbf{sin}$(\varphi)$
-        \State $p_1 \gets \textbf{E}(c, r, cos\varphi, sin\varphi, \theta_1)$
-        \State ${e_1}^\prime \gets \textbf{E}^\prime (c, r, cos\varphi, sin\varphi, \theta_1)$
-        \State $\alpha \gets 0.26511477349130245$
-        \State $t \gets \theta_1 + \frac{\pi}{4}$
-        \For{$n$ times}
-            \State $p_2 \gets \textbf{E}(c, r, cos\varphi, sin\varphi, t)$
-            \State ${e_2}^\prime \gets \textbf{E}^\prime (c, r, cos\varphi, sin\varphi, t)$
-            \State $q_1 \gets p_1 + \alpha * {e_1}^\prime$
-            \State $q_2 \gets p_2 - \alpha * {e_2}^\prime$
-            \State $\textbf{Cubic}(p_1, q_1, q_2, p_2)$
-            \State $p1 \gets p2$
-            \State ${e_1}^\prime \gets {e_2}^\prime$
-            \State $t \gets t + \frac{\pi}{4}$
-        \EndFor
-        \If{$n \neq \lceil segments \rceil$}
-            \State $step \gets t - \frac{\pi}{4}$
-            \State $t \gets \theta_1 + \Delta\theta$
-            \State $\alpha_t \gets$ \textbf{tan}$(\frac{step}{2})$
-            \State $\alpha \gets$ \textbf{sin}$(step) \frac{\sqrt{4+3{\alpha_t}^2}-1}{3}$
-            \State $p_2 \gets \textbf{E}(c, r, cos\varphi, sin\varphi, t)$
-            \State ${e_2}^\prime \gets \textbf{E}^\prime (c, r, cos\varphi, sin\varphi, t)$
-            \State $q_1 \gets p_1 + \alpha * {e_1}^\prime$
-            \State $q_2 \gets p_2 - \alpha * {e_2}^\prime$
-            \State $\textbf{Cubic}(p_1, q_1, q_2, p_2)$
-        \EndIf
-    \end{algorithmic}
+\makebox[\linewidth]{
+\begin{minipage}{\dimexpr\linewidth-23.5em}
+\begin{algorithm}[H]
+	\begin{algorithmic}
+		\caption{Draw SVG elliptical arc with cubic bezier curves}
+		\Require $start$, $r$, $\varphi$, $f_A$, $f_S$, $end$
+		\If{$start_x = end_x$ AND $start_y = end_y$}
+			\State \Return
+		\EndIf
+		\If{$r_x = 0$ OR $r_y = 0$}
+			\State $\textbf{Line}(start, end)$
+			\State \Return
+		\EndIf
+		\State $r \gets (|r_x|, |r_y|)$
+		\State $r, c, \theta_1, \Delta\theta \gets$ \textbf{Center}$(start, r, \varphi, f_A, f_S, end)$
+		\State $segments \gets \frac{\Delta\theta}{\frac{\pi}{4}}$
+		\State $n \gets \lfloor segments \rfloor$
+		\State $cos\varphi \gets$ \textbf{cos}$(\varphi)$
+		\State $sin\varphi \gets$ \textbf{sin}$(\varphi)$
+		\State $p_1 \gets \textbf{E}(c, r, cos\varphi, sin\varphi, \theta_1)$
+		\State ${e_1}^\prime \gets \textbf{E}^\prime (c, r, cos\varphi, sin\varphi, \theta_1)$
+		\State $\alpha \gets 0.26511477349130245$
+		\State $t \gets \theta_1 + \frac{\pi}{4}$
+		\For{$n$ times}
+			\State $p_2 \gets \textbf{E}(c, r, cos\varphi, sin\varphi, t)$
+			\State ${e_2}^\prime \gets \textbf{E}^\prime (c, r, cos\varphi, sin\varphi, t)$
+			\State $q_1 \gets p_1 + \alpha * {e_1}^\prime$
+			\State $q_2 \gets p_2 - \alpha * {e_2}^\prime$
+			\State $\textbf{Cubic}(p_1, q_1, q_2, p_2)$
+			\State $p1 \gets p2$
+			\State ${e_1}^\prime \gets {e_2}^\prime$
+			\State $t \gets t + \frac{\pi}{4}$
+		\EndFor
+		\If{$n \neq \lceil segments \rceil$}
+			\State $step \gets t - \frac{\pi}{4}$
+			\State $t \gets \theta_1 + \Delta\theta$
+			\State $\alpha_t \gets$ \textbf{tan}$(\frac{step}{2})$
+			\State $\alpha \gets$ \textbf{sin}$(step) \frac{\sqrt{4+3{\alpha_t}^2}-1}{3}$
+			\State $p_2 \gets \textbf{E}(c, r, cos\varphi, sin\varphi, t)$
+			\State ${e_2}^\prime \gets \textbf{E}^\prime (c, r, cos\varphi, sin\varphi, t)$
+			\State $q_1 \gets p_1 + \alpha * {e_1}^\prime$
+			\State $q_2 \gets p_2 - \alpha * {e_2}^\prime$
+			\State $\textbf{Cubic}(p_1, q_1, q_2, p_2)$
+		\EndIf
+	\end{algorithmic}
 \end{algorithm}
+\end{minipage}}
 \end{document}
 ```
 </div>
