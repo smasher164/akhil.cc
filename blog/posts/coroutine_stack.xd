@@ -1,67 +1,21 @@
 <style>
     p {
-        white-space: pre-line;
+        white-space: pre-wrap;
     }
 </style>
 # Stackful Coroutines and the Curse of ABI Compatibility
 #### June 12, 2019
 
-	Why don't most systems programming languages have support for stackful
-coroutines? Is it a design decision of the language, something deferred to a
-library feature, or is there something fundamentally difficult about
-implementing a coroutine system that is brought on by modern operating systems?
+	Why don't most systems programming languages have support for stackful coroutines? Is it a design decision of the language, something deferred to a library feature, or is there something fundamentally difficult about implementing a coroutine system that is brought on by modern operating systems? 
 
-	I did quite a bit of research on how to implement coroutines in a
-programming language, and pretty much every method has a major disadvantage.
-What’s important to me for any language I create is the ability to interact with
-the platform’s ABI with zero-overhead, meaning that calls into C code should
-occur at little to no cost. However, languages that maintain ABI compatibility
-should follow the platform’s calling convention, and widespread practice like a
-fixed stack size.
+	I did quite a bit of research on how to implement coroutines in a programming language, and pretty much every method has a major disadvantage. What’s important to me for any language I create is the ability to interact with the platform’s ABI with zero-overhead, meaning that calls into C code should occur at little to no cost. However, languages that maintain ABI compatibility should follow the platform’s calling convention, and widespread practice like a fixed stack size.
 
-	And therein lies the problem. For any language that supports stackful
-coroutines, fixed stack sizes that are too large prevent the program from
-creating many coroutines at once. For example, Go processes can have hundreds of
-thousands of coroutines existing simultaneously on a system with just one
-thread, because coroutines are multiplexed on top of OS threads, and the
-runtime’s scheduler will preempt a coroutine’s execution to switch to different
-coroutines at points of synchronization and IO. However, stack sizes that are
-too small prevent most functions written in C from executing, which tend to
-expect larger call stacks to support deeper call graphs.
+	And therein lies the problem. For any language that supports stackful coroutines, fixed stack sizes that are too large prevent the program from creating many coroutines at once. For example, Go processes can have hundreds of thousands of coroutines existing simultaneously on a system with just one thread, because coroutines are multiplexed on top of OS threads, and the runtime’s scheduler will preempt a coroutine’s execution to switch to different coroutines at points of synchronization and IO. However, stack sizes that are too small prevent most functions written in C from executing, which tend to expect larger call stacks to support deeper call graphs.
 
-	So one might propose the solution to support growable stacks. However,
-almost no OS provides this ability, meaning stack sizes can’t be changed
-dynamically for a thread using a system call that maintains the same addresses.
-What if we roll our own? For any newly launched coroutine, allocate a small
-segment of stack space on the heap, set the tail-end of the the segment to be a
-write barrier to detect when we overflow the stack, tell the scheduler to
-eventually execute this coroutine, set the stack pointer to this new address,
-and issue a CALL instruction to the coroutine’s start address. During the
-coroutine’s execution, if the stack size overflows, allocate another segment on
-the heap and link the end of the previous stack to the beginning of the new
-stack.
+	So one might propose the solution to support growable stacks. However, almost no OS provides this ability, meaning stack sizes can’t be changed dynamically for a thread using a system call that maintains the same addresses. What if we roll our own? For any newly launched coroutine, allocate a small segment of stack space on the heap, set the tail-end of the the segment to be a write barrier to detect when we overflow the stack, tell the scheduler to eventually execute this coroutine, set the stack pointer to this new address, and issue a CALL instruction to the coroutine’s start address. During the coroutine’s execution, if the stack size overflows, allocate another segment on the heap and link the end of the previous stack to the beginning of the new stack.
 
-	The mentioned technique uses segmented stacks, and while it solves the
-growable stacks problem, it has a number of disadvantages. First, a
-discontiguous stack can be inefficient during traversal. Additionally, this
-calling convention has a prologue that goes beyond a simple CALL instruction.
-Finally, one can imagine a situation where a function that calls another
-function repeatedly in a loop may have to allocate and free a stack segment on
-each iteration of the loop, resulting in thrashing of the stack. Let’s say we
-want contiguous stacks, then maybe on stack growth we instead allocate a larger
-segment enough to contain the previous segment, and copy over the data. This
-fixes many of the inefficiencies associated with stack thrashing, but the
-problem now is that the virtual addresses to stack members are no longer unique.
+	The mentioned technique uses segmented stacks, and while it solves the growable stacks problem, it has a number of disadvantages. First, a discontiguous stack can be inefficient during traversal. Additionally, this calling convention has a prologue that goes beyond a simple CALL instruction. Finally, one can imagine a situation where a function that calls another function repeatedly in a loop may have to allocate and free a stack segment on each iteration of the loop, resulting in thrashing of the stack. Let’s say we want contiguous stacks, then maybe on stack growth we instead allocate a larger segment enough to contain the previous segment, and copy over the data. This fixes many of the inefficiencies associated with stack thrashing, but the problem now is that the virtual addresses to stack members are no longer unique.
 
-	Go addresses this issue by disallowing pointers into stack members from
-external code like C. Go function calls can take advantage of the runtime’s
-knowledge that all of the stack members are at an offset from the top of the
-stack. However Go is also notoriously known for its high overhead for calls into
-C, since they run C code on a completely separate stack and switch when calling
-C code.
+	Go addresses this issue by disallowing pointers into stack members from external code like C. Go function calls can take advantage of the runtime’s knowledge that all of the stack members are at an offset from the top of the stack. However Go is also notoriously known for its high overhead for calls into C, since they run C code on a completely separate stack and switch when calling C code.
 
-	The correct tradeoff of solutions may be to use a form of segmented stacks.
-In order to keep C code in the same stack as the program, some analysis may have
-to be done to allocate a large segment size before a C call. Including a stack
-barrier in a C object file might be impossible, so this may be the only
-possibility without stack switching.
+	The correct tradeoff of solutions may be to use a form of segmented stacks. In order to keep C code in the same stack as the program, some analysis may have to be done to allocate a large segment size before a C call. Including a stack barrier in a C object file might be impossible, so this may be the only possibility without stack switching.

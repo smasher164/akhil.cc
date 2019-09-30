@@ -1,39 +1,19 @@
 <p><style>
 	p {
-		white-space: pre-line;
+		white-space: pre-wrap;
 	}
 </style>
-</p><h1> The Problem of Overlapping Tags</h1><h4> September 28, 2018</h4><p>	Mexdown markup has the special property that text formatting can overlap.
-For example, if you want text that has regions which are <em>italic, <u>italic and
-underlined,</u></em><u> or just underlined</u>, you can simply write it as <code>*italic, _italic
-and underlined,* or just underlined_</code> instead of redundantly opening and closing
-the underline like <code>*italic, _italic and underlined,_*_ or just underlined_</code>.
-You can imagine that text with multiple levels of nested formatting would
-benefit from the clarity of overlapping markup.
+</p><h1> The Problem of Overlapping Tags</h1><h4> September 28, 2018</h4><p>	Mexdown markup has the special property that text formatting can overlap. For example, if you want text that has regions which are <em>italic, <u>italic and underlined,</u></em><u> or just underlined</u>, you can simply write it as <code>*italic, _italic and underlined,* or just underlined_</code> instead of redundantly opening and closing the underline like <code>*italic, _italic and underlined,_*_ or just underlined_</code>. You can imagine that text with multiple levels of nested formatting would benefit from the clarity of overlapping markup.
 
-	However, browsers do not like overlapping HTML and it is not considered
-valid. Browsers can do some non-normative error recovery, as mentioned in the
-<a href="https://www.w3.org/TR/html5/syntax.html#an-introduction-to-error-handling-and-strange-cases-in-the-parser">W3C standard</a>. In fact, they provide the
-<a href="https://www.w3.org/TR/html5/syntax.html#adoption-agency-algorithm">adoption agency</a> algorithm, which I will mention later. Mexdown’s AST
-encodes a paragraph’s formatting information as a list of structs, containing
-beginning and ending offsets.
+	However, browsers do not like overlapping HTML and it is not considered valid. Browsers can do some non-normative error recovery, as mentioned in the <a href="https://www.w3.org/TR/html5/syntax.html#an-introduction-to-error-handling-and-strange-cases-in-the-parser">W3C standard</a>. In fact, they provide the <a href="https://www.w3.org/TR/html5/syntax.html#adoption-agency-algorithm">adoption agency</a> algorithm, which I will mention later. Mexdown’s AST encodes a paragraph’s formatting information as a list of structs, containing beginning and ending offsets.
 </p><pre>type Format struct {
 	Kind FType
 	Beg  int
 	End  int
 }
-</pre><p>	Given that the Beg and End offsets from separate structs can overlap, how
-does the code generator generate non-overlapping HTML? The adoption agency
-algorithm mentioned earlier maintains a stack of formatting nodes, checking
-specific error conditions along the way, and attempts to construct a tree with
-the same semantics as the original markup. The closest comparison I can think of
-is the <a href="https://en.wikipedia.org/wiki/Shunting-yard_algorithm">Shunting-yard algorithm</a> but the adoption agency reattaches child
-nodes to new parents, hence the name.
+</pre><p>	Given that the Beg and End offsets from separate structs can overlap, how does the code generator generate non-overlapping HTML? The adoption agency algorithm mentioned earlier maintains a stack of formatting nodes, checking specific error conditions along the way, and attempts to construct a tree with the same semantics as the original markup. The closest comparison I can think of is the <a href="https://en.wikipedia.org/wiki/Shunting-yard_algorithm">Shunting-yard algorithm</a> but the adoption agency reattaches child nodes to new parents, hence the name.
 
-	Paragraphs in mexdown aren’t amenable to the same manipulation as a DOM that
-is inherently a tree-like structure, at least not directly. We are given one
-contiguous body of text, and a list of positions and their formatting
-information.
+	Paragraphs in mexdown aren’t amenable to the same manipulation as a DOM that is inherently a tree-like structure, at least not directly. We are given one contiguous body of text, and a list of positions and their formatting information.
 </p><pre>// beginning and ending Formats are internally split into this structure.
 type repl struct {
 	i     int // position in text
@@ -41,18 +21,9 @@ type repl struct {
 	kind  int // e.g. &lt;em&gt;, &lt;/u&gt;, … 
 	extra int
 }
-</pre><p>	Using a list of these tags, we would like to possibly manipulate them
-in-place in a list instead of using a stack to construct a tree. With the
-resultant list of tags, I can simply print them into a buffer, along with the
-text between those positions.
+</pre><p>	Using a list of these tags, we would like to possibly manipulate them in-place in a list instead of using a stack to construct a tree. With the resultant list of tags, I can simply print them into a buffer, along with the text between those positions.
 
-	To demonstrate the algorithm I use in mexdown, I will simplify the problem
-statement slightly without loss of generality. In HTML, <code>&lt;em&gt; this is &lt;u&gt;
-overlapping &lt;/em&gt; text &lt;/u&gt;</code>, but we will represent this as <code>a b -a -b</code>. That
-is, an opening tag is represented by a letter, and its respective closing tag is
-the negation of the same letter. Our goal is to transform the HTML into <code>&lt;em&gt;
-this is &lt;u&gt; overlapping &lt;/u&gt; &lt;/em&gt; &lt;u&gt; text &lt;/u&gt;</code>, which our solution represents
-as <code>a b -b -a b -b</code>.
+	To demonstrate the algorithm I use in mexdown, I will simplify the problem statement slightly without loss of generality. In HTML, <code>&lt;em&gt; this is &lt;u&gt; overlapping &lt;/em&gt; text &lt;/u&gt;</code>, but we will represent this as <code>a b -a -b</code>. That is, an opening tag is represented by a letter, and its respective closing tag is the negation of the same letter. Our goal is to transform the HTML into <code>&lt;em&gt; this is &lt;u&gt; overlapping &lt;/u&gt; &lt;/em&gt; &lt;u&gt; text &lt;/u&gt;</code>, which our solution represents as <code>a b -b -a b -b</code>.
 
 	Here is the algorithm written in Go, and a <a href="https://play.golang.org/p/aR8RHOhIC2S">playground link</a>:
 </p><pre>package main
@@ -114,11 +85,7 @@ func main() {
 	fmt.Println(list.str())
 }
 
-</pre><p>	Notice that the algorithm makes the greedy choice to close the unmatched tag
-(insert at position i), and reopen it (insert at position i+2). It does this
-repeatedly until the lower pointer it reaches the bottom index. This effectively
-partitions the list into a non-overlapping and overlapping section, making it
-easy to parallelize.
+</pre><p>	Notice that the algorithm makes the greedy choice to close the unmatched tag (insert at position i), and reopen it (insert at position i+2). It does this repeatedly until the lower pointer it reaches the bottom index. This effectively partitions the list into a non-overlapping and overlapping section, making it easy to parallelize.
 
 	Here's the execution pattern for a list of size 8:
 </p><pre>a b c d -c -a -b -d

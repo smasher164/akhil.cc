@@ -1,6 +1,6 @@
 <style>
 	p {
-		white-space: pre-line;
+		white-space: pre-wrap;
 	}
 	.latex > svg {
 		width: auto;
@@ -13,33 +13,11 @@
 # Approximating an Elliptical Arc with Cubic Bezier Curves
 #### January 10, 2019
 
-	In my recent work to create a cross-platform gui abstraction, I found that
-Core Graphics on MacOS does not offer a convenient way to draw non-axis-aligned
-elliptical arcs, like the [svg command](svgspec1). There are a number of
-approaches I could take to address this problem. For instance, I can use the
-midpoint ellipse algorithm to rasterize an ellipse onto a bitmap to render onto
-the screen. Given that I'm implementing a core graphics abstraction, I would
-have to somehow integrate all of the path stroke and fill effects, as well as
-anti-aliasing if that is given as an option. Moreover, if core graphics were to
-use the GPU for rasterization, then I would have to write the rasterizer in
-Metal, to achieve performance parity. But this is all getting very messy.
+	In my recent work to create a cross-platform gui abstraction, I found that Core Graphics on MacOS does not offer a convenient way to draw non-axis-aligned elliptical arcs, like the [svg command](svgspec1). There are a number of approaches I could take to address this problem. For instance, I can use the midpoint ellipse algorithm to rasterize an ellipse onto a bitmap to render onto the screen. Given that I'm implementing a core graphics abstraction, I would have to somehow integrate all of the path stroke and fill effects, as well as anti-aliasing if that is given as an option. Moreover, if core graphics were to use the GPU for rasterization, then I would have to write the rasterizer in Metal, to achieve performance parity. But this is all getting very messy.
 
-	Another option, but not one I went with, is to use the axis-aligned
-circle-drawing API provided by core graphics, and applying matrix transforms and
-clipping paths to the path to turn it into an ellipse. This offers a simple
-implementation, and one I may pursue in the future. However the implementation
-this post discusses will turn an ellipse into a series of cubic bezier curves.
+	Another option, but not one I went with, is to use the axis-aligned circle-drawing API provided by core graphics, and applying matrix transforms and clipping paths to the path to turn it into an ellipse. This offers a simple implementation, and one I may pursue in the future. However the implementation this post discusses will turn an ellipse into a series of cubic bezier curves.
 
-	Cubic bezier curves are functions of order 3 that can be defined by their
-endpoints and two control points. Being polynomials, they cannot represent conic
-sections, like circles and ellipses. Note, a rational function can represent
-conics, which are used by some graphics implementations (see [NURBS](NURBS)).
-However, one can use a sequence of higher order polynomials to approximate an
-ellipse. At a high level, the newly generated control points are gotten by
-combining the arc's parametric equation and derivative evaluated at the
-endpoints, as well as the solution to a system of equations evaluated using the
-angle from the arc to the center of the ellipse. A detailed derivation of the
-algorithm is given by Maisonobe in [this](Maisonobe) paper.
+	Cubic bezier curves are functions of order 3 that can be defined by their endpoints and two control points. Being polynomials, they cannot represent conic sections, like circles and ellipses. Note, a rational function can represent conics, which are used by some graphics implementations (see [NURBS](NURBS)). However, one can use a sequence of higher order polynomials to approximate an ellipse. At a high level, the newly generated control points are gotten by combining the arc's parametric equation and derivative evaluated at the endpoints, as well as the solution to a system of equations evaluated using the angle from the arc to the center of the ellipse. A detailed derivation of the algorithm is given by Maisonobe in [this](Maisonobe) paper.
 
 	In order to implement the SVG elliptical arc api, one needs to convert from
 endpoint parameterization to center parameterization. The endpoint syntax is
@@ -108,11 +86,7 @@ defined by
 ```
 </div>
 
-	The W3C provides an [algorithm](conversion) to convert from endpoint to
-center parameterization. This algorithm however has a few issues when taking
-floating-point arguments, resulting in `NaN`s for certain arguments to `sqrt` or
-`arccos`. [This](floatfix) blog post from Musing Monday describes the fixes
-applied below.
+	The W3C provides an [algorithm](conversion) to convert from endpoint to center parameterization. This algorithm however has a few issues when taking floating-point arguments, resulting in `NaN`s for certain arguments to `sqrt` or `arccos`. [This](floatfix) blog post from Musing Monday describes the fixes applied below.
 
 <div class="latex">
 ```svglatex
@@ -267,18 +241,7 @@ applied below.
 ```
 </div>
 
-	Finally, the arc algorithm takes a step angle, used to determine the number
-of curves to use in the approximation. However, we can choose a step angle ahead
-of time that can minimize the error, namely *π/4*. This implies that up to four
-bezier curves will be used to construct an elliptical arc. If the *Δθ* gotten
-from the conversion to center parameterization is not a multiple of *π/4*, then
-there the remaining portion of the arc will have a smaller step angle. The step
-angle is used to determine the value for *α*, which is used to compute the two
-control points. In this implementation, I decided to draw the portion of arc for
-which *Δθ* is a multiple of *π/4* using a precomputed value for *α*, and only
-drawing the remainder if it exists. This precomputed value for a step angle of
-*π/4* is 0.26511477349130245. This means that in the worst case, I only have to
-compute *α* once.
+	Finally, the arc algorithm takes a step angle, used to determine the number of curves to use in the approximation. However, we can choose a step angle ahead of time that can minimize the error, namely *π/4*. This implies that up to four bezier curves will be used to construct an elliptical arc. If the *Δθ* gotten from the conversion to center parameterization is not a multiple of *π/4*, then there the remaining portion of the arc will have a smaller step angle. The step angle is used to determine the value for *α*, which is used to compute the two control points. In this implementation, I decided to draw the portion of arc for which *Δθ* is a multiple of *π/4* using a precomputed value for *α*, and only drawing the remainder if it exists. This precomputed value for a step angle of *π/4* is 0.26511477349130245. This means that in the worst case, I only have to compute *α* once.
 
 	Here is the final algorithm to draw an elliptical arc.
 <div class="latex">
