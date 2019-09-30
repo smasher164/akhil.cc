@@ -2,6 +2,9 @@
 	p {
 		white-space: pre-wrap;
 	}
+	pre {
+		tab-size: 4;
+	}
 </style>
 # The Problem of Overlapping Tags
 #### September 28, 2018

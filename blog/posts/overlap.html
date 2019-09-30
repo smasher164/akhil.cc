@@ -2,6 +2,9 @@
 	p {
 		white-space: pre-wrap;
 	}
+	pre {
+		tab-size: 4;
+	}
 </style>
 </p><h1> The Problem of Overlapping Tags</h1><h4> September 28, 2018</h4><p>	Mexdown markup has the special property that text formatting can overlap. For example, if you want text that has regions which are <em>italic, <u>italic and underlined,</u></em><u> or just underlined</u>, you can simply write it as <code>*italic, _italic and underlined,* or just underlined_</code> instead of redundantly opening and closing the underline like <code>*italic, _italic and underlined,_*_ or just underlined_</code>. You can imagine that text with multiple levels of nested formatting would benefit from the clarity of overlapping markup.
 
