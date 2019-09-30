@@ -1,6 +1,6 @@
 <style>
 	p {
-		white-space: pre-wrap;
+		white-space: pre-line;
 	}
 </style>
 # Notes on OS Construction: Booting (WIP)

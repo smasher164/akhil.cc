@@ -1,6 +1,6 @@
 <style>
 	p {
-		white-space: pre-wrap;
+		white-space: pre-line;
 	}
 </style>
 # The Problem of Overlapping Tags

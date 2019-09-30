@@ -1,6 +1,6 @@
 <style>
     p {
-        white-space: pre-wrap;
+        white-space: pre-line;
     }
 </style>
 # Stackful Coroutines and the Curse of ABI Compatibility
