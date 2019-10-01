@@ -13,16 +13,18 @@
 
 	The GDT contains 8-byte entries, each of which has a base address, segment length, and other configurable attributes like access permissions. Indexes into the GDT are called selectors. Every GDT is required to have its first descriptor be <strong><code>NULL</code></strong>. By initializing unused segments with this entry, an exception is triggered when unused segments are referenced. The GDT can be loaded with the <code>LGDT</code> instruction.
 
-	Interrupts are a way to notify the CPU about an event, and have it execute some code. In real mode, a table of interrupt handlers is loaded and reserved between the physical addresses 0x0000 and 0x03FF, where each pointer is 4 bytes. These range from division-by-zero to <a href="https://en.wikipedia.org/wiki/BIOS_interrupt_call">BIOS interrupts</a> that can write to the screen. Entering protected will require disabling interrupts beforehand. In protected mode, there is no predefined table, and BIOS interrupts are no longer accessible.
+	Interrupts are a way to notify the CPU about an event, and have it execute some code. In real mode, a table of interrupt handlers is loaded and reserved between the physical addresses 0x0000 and 0x03FF, where each pointer is 4 bytes. These range from division-by-zero to <a href="https://en.wikipedia.org/wiki/BIOS_interrupt_call">BIOS interrupts</a> that can write to the screen. Entering protected mode will require disabling interrupts beforehand. In protected mode, there is no predefined table, and BIOS interrupts are no longer accessible.
 
-	An IDT needs to be set up, also an array of descriptors, each of which has a selector into the GDT for the code segment where the interrupt handler is located, an offset to the specific interrupt handler, and configurable attributes like its privilege level and gate type. Gate types include the task gate (to indicate a task switch and save context), trap gate (to call an interrupt handler), and interrupt gate (to disable interrupts when the handler is executed). The IDT can be loaded with the <code>LIDT</code> instruction.
+	An IDT needs to be set up, which is also an array of descriptors, each of which has a selector into the GDT for the code segment where the interrupt handler is located, an offset to the specific interrupt handler, and configurable attributes like its privilege level and gate type. Gate types include the task gate (to indicate a task switch and save context), trap gate (to call an interrupt handler), and interrupt gate (to disable interrupts when the handler is executed). The IDT can be loaded with the <code>LIDT</code> instruction.
 
-<strong><em>TODO</em></strong><em>: Display Segment Descriptor Layouts</em>
+<strong>TODO:</strong> <em>Figures for Segment Descriptor Layouts</em>
 
-	In order to address up to 4GB of memory, the 21st (index from zero) address line must be explicitly be enabled. Why isn't this enabled by default? Before processors with more than 20 address lines were introduced, accessing an address past 1MB would wrap around. Some engineers depended on this behavior, so in effort to stay backwards compatible, the 21st address line (A20 line) must be explicitly turned on. There are many ways of turning on the A20 line, all of which are required to have the widest processor support. 
+	In order to address up to 4GB of memory, the 21st (indexed from zero) address line must be explicitly be enabled. Why isn't this enabled by default? Before processors with more than 20 address lines were introduced, accessing an address past 1MB would wrap around. Some engineers depended on this behavior, so in an effort to stay backwards compatible, the 21st address line (A20 line) is disabled by default. There are many ways of turning on the A20 line, all of which are required to have the widest processor support. 
 
 	Finally, set the Protection Enable (PE) bit in CR0, a control register. Perform a jump to a far address to clear the prefetch queue, and initialize protected mode. This will involve initializing the segment registers with a data segment from the GDT, re-enabling interrupts, and jumping to the kernel.
 
-	<em>NOTE: There is an additional process when entering long mode, a.k.a 64-bit mode, which involves CPU feature detection, disabling and re-enabling interrupts, setting up paging, setting the long mode bit in the model-specific-register, and updating the GDT and IDT.</em>
+	<strong>NOTE:</strong> <em>There is an additional process when entering long mode, a.k.a 64-bit mode, which involves CPU feature detection, disabling and re-enabling interrupts, setting up paging, setting the long mode bit in the model-specific-register, and updating the GDT and IDT.</em>
+
+<strong>TODO:</strong> <em>Describe the UEFI Boot Process</em>
 
 </p>
