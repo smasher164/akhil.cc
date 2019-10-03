@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bytes"
 	"crypto/sha256"
 	"flag"
 	"fmt"
@@ -41,13 +42,16 @@ type blog struct {
 	feed *feeds.Feed
 }
 
-const stub = `<html>
+const stub = `<!DOCTYPE html>
+<html lang="en">
     <head>
         <meta charset="UTF-8"><meta name="viewport" content="width=device-width, minimum-scale=1.0">
+        <meta name="Description" content="{{.Description}}">
+        <title>{{.Title}}</title>
         <link href="/static/blog.css" rel="stylesheet">
     </head>
     <body>
-        {{printf "%s" .}}
+        {{printf "%s" .Body}}
     </body>
 </html>
 `
@@ -56,7 +60,9 @@ var tmpl = template.Must(template.New("").Parse(stub))
 
 func (b *blog) init(posts map[string]string) {
 	// load each post from file and into cache
-	for route, fpath := range posts {
+	for _, p := range b.posts {
+		p := p
+		fpath := posts[p.Route]
 		file, err := os.Open(fpath)
 		if err != nil {
 			log.Println(err)
@@ -68,7 +74,18 @@ func (b *blog) init(posts map[string]string) {
 			log.Print(err)
 			return
 		}
-		b.cache[route] = out
+		buf := new(bytes.Buffer)
+		desc := fmt.Sprintf("Author: Akhil Indurti, Created: %v", p.Created)
+		if len(p.Description) != 0 {
+			desc += ", Description: " + p.Description
+		}
+		res := struct {
+			Title       string
+			Description string
+			Body        []byte
+		}{Title: p.Title, Description: desc, Body: out}
+		tmpl.Execute(buf, res)
+		b.cache[p.Route] = buf.Bytes()
 	}
 	// create atom feed from posts
 	now := time.Now()
@@ -94,7 +111,7 @@ func (b *blog) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		http.NotFound(w, r)
 		return
 	}
-	tmpl.Execute(w, body)
+	w.Write(body)
 }
 
 func main() {
