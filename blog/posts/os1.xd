@@ -5,6 +5,9 @@
 	img {
 		width: 100%;
 	}
+    #gdt * {
+        font-family: monospace;
+    }
 </style>
 # Notes on OS Construction: Booting (WIP)
 #### September 30, 2019
@@ -78,6 +81,7 @@ mov          ax, 0x3
 int          0x10
 ```
     We can now begin the process of entering protected mode by setting up the the GDT. Under a gdt label, we define three 8-byte values representing each descriptor. Additionally define a pointer structure under a GDT_ADDR label which specifies the GDT's limit (size in bytes - 1) and starting physical address.
+<div id="gdt">
 ```
 gdt:
 
@@ -121,6 +125,7 @@ GDT_ADDR:
     dw           24-1
     dd           gdt
 ```
+</div>
     Our booting code can now load the descriptor table with
 ```
 lgdt         [GDT_ADDR]
