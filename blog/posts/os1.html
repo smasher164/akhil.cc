@@ -6,7 +6,7 @@
 		width: 100%;
 	}
 </style>
-</p><h1> Notes on OS Construction: Booting (WIP)</h1><h4> September 30, 2019</h4><h4> Updated: October 2, 2019</h4><p>	When a computer is turned on, special firmware that is stored in non-volalite memory is run. The three most popular kinds are BIOS, UEFI, and Coreboot.
+</p><h1> Notes on OS Construction: Booting (WIP)</h1><h4> September 30, 2019</h4><h4> Updated: October 6, 2019</h4><p>	When a computer is turned on, special firmware that is stored in non-volalite memory is run. The three most popular kinds are BIOS, UEFI, and Coreboot.
 </p><h3> BIOS</h3><p>    The original BIOS (Basic Input/Output System) was created for an IBM PC in the 70s. Since there was no official spec, PCs since then have conformed to match its behavior.
 
 	The BIOS's goal is to iterate through all of the attached media until it can successfully boot from one. At start-up, the CPU executes the BIOS program, and on x86 chips this will happen in 16-bit mode (also called real mode). During boot, the BIOS loads the first block from disk, called the Master Boot Record (MBR), which contains bootstrapping code, a partition table, and the disk signature. The MBR is 512 bytes and is loaded into the physical address 0x7C00. Why? <a href="https://www.glamenv-septzen.net/en/view/6">Apparently</a>, this was a conscious decision by the IBM PC 5150 development team to leave surrounding memory available for interrupt vectors, the BIOS, and the OS. The BIOS checks that the signature matches 0xAA55 and proceeds to execute the boostrapping code.

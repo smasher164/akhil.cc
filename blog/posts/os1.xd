@@ -8,7 +8,7 @@
 </style>
 # Notes on OS Construction: Booting (WIP)
 #### September 30, 2019
-#### Updated: October 2, 2019
+#### Updated: October 6, 2019
 
 	When a computer is turned on, special firmware that is stored in non-volalite memory is run. The three most popular kinds are BIOS, UEFI, and Coreboot.
 ### BIOS
