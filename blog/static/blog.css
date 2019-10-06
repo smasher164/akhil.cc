@@ -47,29 +47,31 @@
 }
 
 @font-face {
-  font-family: 'Inconsolata';
-  font-style: normal;
-  src: url('/static/inconsolata-v16-latin-regular.eot'); /* IE9 Compat Modes */
-  src: local('Inconsolata Regular'), local('Inconsolata-Regular'),
-       url('/static/inconsolata-v16-latin-regular.eot?#iefix') format('embedded-opentype'), /* IE6-IE8 */
-       url('/static/inconsolata-v16-latin-regular.woff2') format('woff2'), /* Super Modern Browsers */
-       url('/static/inconsolata-v16-latin-regular.woff') format('woff'), /* Modern Browsers */
-       url('/static/inconsolata-v16-latin-regular.ttf') format('truetype'), /* Safari, Android, iOS */
-       url('/static/inconsolata-v16-latin-regular.svg#Inconsolata') format('svg'); /* Legacy iOS */
+    font-family: 'DejaVu Sans Mono';
+    src: url('/static/DejaVuSansMono.eot');
+    src: url('/static/DejaVuSansMono.eot?#iefix') format('embedded-opentype'),
+         url('/static/DejaVuSansMono.woff2') format('woff2'),
+         url('/static/DejaVuSansMono.woff') format('woff'),
+         url('/static/DejaVuSansMono.ttf') format('truetype'),
+         url('/static/DejaVuSansMono.svg#dejavu_sans_monobook') format('svg');
+    font-weight: normal;
+    font-style: normal;
+
 }
-/* inconsolata-700 - latin */
+
 @font-face {
-  font-family: 'Inconsolata';
-  font-style: normal;
-  font-weight: bold;
-  src: url('/static/inconsolata-v16-latin-700.eot'); /* IE9 Compat Modes */
-  src: local('Inconsolata Bold'), local('Inconsolata-Bold'),
-       url('/static/inconsolata-v16-latin-700.eot?#iefix') format('embedded-opentype'), /* IE6-IE8 */
-       url('/static/inconsolata-v16-latin-700.woff2') format('woff2'), /* Super Modern Browsers */
-       url('/static/inconsolata-v16-latin-700.woff') format('woff'), /* Modern Browsers */
-       url('/static/inconsolata-v16-latin-700.ttf') format('truetype'), /* Safari, Android, iOS */
-       url('/static/inconsolata-v16-latin-700.svg#Inconsolata') format('svg'); /* Legacy iOS */
+    font-family: 'DejaVu Sans Mono';
+    src: url('/static/DejaVuSansMono-Bold.eot');
+    src: url('/static/DejaVuSansMono-Bold.eot?#iefix') format('embedded-opentype'),
+         url('/static/DejaVuSansMono-Bold.woff2') format('woff2'),
+         url('/static/DejaVuSansMono-Bold.woff') format('woff'),
+         url('/static/DejaVuSansMono-Bold.ttf') format('truetype'),
+         url('/static/DejaVuSansMono-Bold.svg#dejavu_sans_monobold') format('svg');
+    font-weight: bold;
+    font-style: normal;
+
 }
+
 html, body {
 	margin: 0;
 	height: 100%;
@@ -82,7 +84,8 @@ h1, h2, h3, h4 {
 	font-weight: 100;
 }
 pre, code {
-	font-family: 'Inconsolata', 'monospace';
+	font-family: 'DejaVu Sans Mono', 'monospace';
+    font-size: 0.9em;
 }
 .toc_post {
 	margin-bottom: 1em;

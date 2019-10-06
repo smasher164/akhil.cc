@@ -153,7 +153,7 @@ func main() {
 			}
 		}
 		w.Header().Set("Etag", etag)
-		w.Header().Set("Cache-Control", "max-age=31536000")
+		w.Header().Set("Cache-Control", "no-cache")
 		if strings.HasPrefix(path.Ext(r.URL.Path), "woff2") {
 			w.Header().Set("Content-Type", "application/font-woff2")
 		}

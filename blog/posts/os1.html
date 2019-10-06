@@ -5,14 +5,11 @@
 	img {
 		width: 100%;
 	}
-    #gdt * {
-        font-family: monospace;
-    }
 </style>
-</p><h1> Notes on OS Construction: Booting (WIP)</h1><h4> September 30, 2019</h4><h4> Updated: October 2, 2019</h4><p>	When a computer is turned on, special firmware that is stored in non-volalite memory is run. The three most popular kinds are BIOS, UEFI, and coreboot-based firmware.
-</p><h3> BIOS</h3><p>    The original BIOS (Basic Input/Output System) firmware was created for the IBM PC in the 70s. Since there was no official spec, PCs since then have conformed to match its behavior.
+</p><h1> Notes on OS Construction: Booting (WIP)</h1><h4> September 30, 2019</h4><h4> Updated: October 2, 2019</h4><p>	When a computer is turned on, special firmware that is stored in non-volalite memory is run. The three most popular kinds are BIOS, UEFI, and Coreboot.
+</p><h3> BIOS</h3><p>    The original BIOS (Basic Input/Output System) was created for an IBM PC in the 70s. Since there was no official spec, PCs since then have conformed to match its behavior.
 
-	The BIOS's goal is to iterate through all of the attached media until it can successfully boot from one. At start-up, the CPU executes the BIOS program, and on x86 chips this will happen in 16-bit mode. During boot, the BIOS loads the first block from disk, called the Master Boot Record (MBR), which contains bootstrapping code, a partition table, and the disk signature. The MBR is 512 bytes and is loaded into the physical address 0x7C00. Why? <a href="https://www.glamenv-septzen.net/en/view/6">Apparently</a>, this was a conscious decision by the IBM PC 5150 development team to leave surrounding memory available for interrupt vectors, the BIOS, and the OS. The BIOS checks that the signature matches 0xAA55 and proceeds to execute the boostrapping code.
+	The BIOS's goal is to iterate through all of the attached media until it can successfully boot from one. At start-up, the CPU executes the BIOS program, and on x86 chips this will happen in 16-bit mode (also called real mode). During boot, the BIOS loads the first block from disk, called the Master Boot Record (MBR), which contains bootstrapping code, a partition table, and the disk signature. The MBR is 512 bytes and is loaded into the physical address 0x7C00. Why? <a href="https://www.glamenv-septzen.net/en/view/6">Apparently</a>, this was a conscious decision by the IBM PC 5150 development team to leave surrounding memory available for interrupt vectors, the BIOS, and the OS. The BIOS checks that the signature matches 0xAA55 and proceeds to execute the boostrapping code.
 </p><h3> "Hello, World!"</h3><p>	I put together a simple BIOS-based boot program that prints "Hello, World!" to the screen. The source can be found on the <a href="https://github.com/smasher164/oscons/tree/boot-bios-helloworld">boot-bios-helloworld</a> branch of my <a href="https://github.com/smasher164/oscons">oscons</a> GitHub repository. I use <a href="https://yasm.tortall.net/">YASM</a> to assemble the source into a flat binary named <code>boot.img</code>,
 </p><pre>$ yasm -f bin boot.asm -o boot.img
 </pre><p>    and <a href="https://www.qemu.org/">QEMU</a> to emulate either an i386 or x86_64 machine with this image loaded onto its disk.
@@ -20,10 +17,10 @@
 </pre><p>    We first issue some directives to tell YASM that we are assembling 16-bit instructions that should be loaded at the address 0x7C00.
 </p><pre>bits         16
 org          0x7C00
-</pre><p>    The BIOS interrupt vector 0x10 contains handlers that perform video services. For this program, we want to write to the Teletype, so we specify 0x0E as the handler in the ah register. This handler takes in the character to write in the al register, so we can make use of the <a href="http://faydoc.tripod.com/cpu/lodsb.htm">LODSB</a> instruction to iterate through the characters stored at <code>HELLO_STRING</code>, which expects the offset from the segment to be stored in the si register.
+</pre><p>    The BIOS interrupt vector 0x10 contains handlers that perform video services. For this program, we want to write to the Teletype, so we specify 0x0E as the handler in the <code>AH</code> register. This handler takes in the character to write in the <code>AL</code> register, so we can make use of the <a href="http://faydoc.tripod.com/cpu/lodsb.htm">LODSB</a> instruction to iterate through the characters stored at <code>HELLO_STRING</code>, which expects the offset from the segment to be stored in the <code>SI</code> register.
 </p><pre>mov          si, HELLO_STRING
 mov          ah, 0x0E
-</pre><p>    Now we just loop over the <code>NULL</code>-terminated string and print each character by calling the interrupt. Once we've reached the end of the strings, terminate the program.
+</pre><p>    Now we just loop over the <code>NULL</code>-terminated string and print each character by calling the interrupt. Once we've reached the end of the string, terminate the program.
 </p><pre>.loop:
     lodsb
     cmp          al, 0
@@ -40,7 +37,7 @@ end:
 </pre><p>    Executing this bootloader program should result in output like this:
 
 <img src="/static/bios-boot-helloworld.png" alt='A window running QEMU that displays "Hello, World!"'></img>
-</p><h3> Protected Mode</h3><p>    Bootloaders will often run in multiple stages, to access more program memory. The bootstrapping code in the MBR will usually load another block corresponding to the Volume Boot Record (VBR), which is located in a separate partition that is found by scanning the MBR's partition table. Eventually the loader will want to enter protected mode, with access to a larger address space and 32-bit registers.
+</p><h3> Protected Mode</h3><p>    Bootloaders will often run in multiple stages, in order to access more program memory. The bootstrapping code in the MBR will usually load another block corresponding to the Volume Boot Record (VBR), which is located in a separate partition that is found by scanning the MBR's partition table. Eventually the loader will want to enter protected mode, with access to a larger address space and 32-bit registers.
 
     This process involves setting up the Global Descriptor Table (GDT), and enabling the A20 Line. Real mode uses segmented addressing, where two segment registers can store a logical address composed of a 16-bit base and 16-bit offset. Its 20-bit physical address is computed as <code>(base&lt;&lt;4) + offset</code>. Protected mode uses descriptors to translate logical addresses to physical addresses.
 
@@ -50,12 +47,11 @@ end:
 
     In order to address up to 4GB of memory, the 21st (indexed from zero) address line must be explicitly be enabled. Why isn't this enabled by default? Before processors with more than 20 address lines were introduced, accessing an address past 1MB would wrap around. Some engineers depended on this behavior, so in an effort to stay backwards compatible, the 21st address line (A20 line) is disabled by default. There are many ways of turning on the A20 line, all of which are required to have the widest processor support. 
 
-    Finally, set the Protection Enable (PE) bit in CR0, a control register. Perform a jump to a far address to clear the prefetch queue, and initialize protected mode. This will involve initializing the segment registers with a data segment from the GDT and jumping into the kernel.
-</p><h3> "Hello, Protected Mode!"</h3><p>    This example extends the helloworld example above to enter protected mode, and print a message indicating its success. The source can be found on the <a href="https://github.com/smasher164/oscons/tree/boot-bios-protected">boot-bios-protected</a> branch of my <a href="https://github.com/smasher164/oscons">oscons</a> GitHub repository. The build instructions have not changed, but there is additional work involved before printing a message. The first thing to note is that we want to print in protected mode by writing to video memory. The most convenient way to do this is to set the video mode to support 80x25 16 color text during boot, before entering protected mode. This can be done with the video services interrupt 0x10, and the AH=0,AL=3.
+    Finally, set the Protected Mode Enable (PE) bit in CR0, a control register. Perform a jump to a far address to clear the prefetch queue, and initialize protected mode. This will involve initializing the segment registers with a data segment from the GDT and jumping into the kernel.
+</p><h3> "Hello, Protected Mode!"</h3><p>    This example extends the helloworld example above to enter protected mode, and prints a message indicating its success. The source can be found on the <a href="https://github.com/smasher164/oscons/tree/boot-bios-protected">boot-bios-protected</a> branch of my <a href="https://github.com/smasher164/oscons">oscons</a> GitHub repository. The build instructions have not changed, but there is additional work involved before printing a message. The first thing to note is that we want to print in protected mode by writing to video memory. The most convenient way to do this is to set the video mode to support 80x25 16 color text during boot, before entering protected mode. This can be done with the video services interrupt 0x10, and the <code>AH=0, AL=3</code>.
 </p><pre>mov          ax, 0x3
 int          0x10
-</pre><p>    We can now begin the process of entering protected mode by setting up the the GDT. Under a gdt label, we define three 8-byte values representing each descriptor. Additionally define a pointer structure under a GDT_ADDR label which specifies the GDT's limit (size in bytes - 1) and starting physical address.
-<div id="gdt">
+</pre><p>    We can now begin the process of entering protected mode by setting up the GDT. Under the gdt label, we define three 8-byte values representing each descriptor. Additionally define a pointer structure under the GDT_ADDR label which specifies the GDT's limit (size in bytes - 1) and starting physical address.
 </p><pre>gdt:
 
 ;   NULL Descriptor
@@ -97,10 +93,9 @@ int          0x10
 GDT_ADDR:
     dw           24-1
     dd           gdt
-</pre><p></div>
-    Our booting code can now load the descriptor table with
+</pre><p>    Our booting code can now load the descriptor table with
 </p><pre>lgdt         [GDT_ADDR]
-</pre><p>    The next step is to enable the A20 line. We should define a procedure to check that the A20 line has been enabled, so we can call it after each attempt. The key logic here is to write a 0x00 byte to 0x0000:0x0500 and 0xFF byte to 0xFFFF:0x0510. If the byte at 0x0000:0x0500 is 0xFF, then the access wraps around, and the A20 line has not been enabled.
+</pre><p>    The next step is to enable the A20 line. We should define a procedure to check that the A20 line has been enabled, so we can call it after each attempt. The key logic here is to write a 0x00 byte to 0x0000:0x0500 and 0xFF byte to 0xFFFF:0x0510. If the byte at 0x0000:0x0500 is 0xFF, then the access wraps around, and the A20 line is not enabled.
 </p><pre>checkA20:
     push         ds
     push         es
@@ -129,20 +124,20 @@ checkA20__exit:
     ret
 </pre><p>    Now our A20 enabling procedure can be defined.
 </p><pre>enableA20:
-    &lt;body&gt;
+    ; ...body of procedure...
 enabledA20:
     ret
 </pre><p>    In the body, we first do an initial check that A20 is enabled.
 </p><pre>call         checkA20
 cmp          ax, 0
 jne          enabledA20
-</pre><p>    The first mechanism is to perform a BIOS interrupt 0x15 with AH=0x24,AL=01. Not all BIOS's support this ability, so we check after performing the interrupt.
+</pre><p>    The first mechanism is to perform a BIOS interrupt 0x15 with <code>AH=0x24, AL=01</code>. Not all BIOS's support this ability, so we check after performing the interrupt.
 </p><pre>mov          ax, 0x2401
 int          0x15
 call         checkA20
 cmp          ax, 0
 jne          enabledA20
-</pre><p>    If that fails, we try the most traditional approach of sending a write command (0xD1), followed by an A20-enabling command (0xDF) to the keyboard controller. 0x64 represents the controller's command register for only writing, while 0x60 is a data port for reading and writing.
+</pre><p>    If that fails, we try the most traditional approach of sending a write command (0xD1), followed by an A20-enabling command (0xDF) to the keyboard controller. 0x64 represents the controller's command register only for writing, while 0x60 is a data port for both reading and writing.
 </p><pre>call         waitIO
 mov          al, 0xD1
 out          0x64, al
@@ -152,7 +147,7 @@ out          0x60, al
 call         checkA20
 cmp          ax, 0
 jne          enabledA20
-</pre><p>    The last attempt to enable A20 is to set bit 1 on a byte from System Control Port A (0x92). We do this method last because it can crash. Note, we don't do conditional jump after it since the immediately succeeding instruction is a ret, and the value in the AX register is already set.`
+</pre><p>    The last attempt to enable A20 is to set bit 1 on a byte from System Control Port A (0x92). We do this method last because it can crash. Note, we don't do conditional jump after it since the immediately succeeding instruction is a <code>ret</code>, and the value in the <code>AX</code> register is already set.
 </p><pre>in           al, 0x92
 or           al, 2
 out          0x92, al
@@ -161,7 +156,7 @@ call         checkA20
 </p><pre>call         enableA20
 cmp          ax, 0
 je           failedA20
-</pre><p>    Printing the failed string works exactly like printing the helloworld string in the previous example.
+</pre><p>    Printing the failed string works exactly like printing the hello-world string in the previous example.
 </p><pre>failedA20:
     mov          si, FAILED_STRING
     mov          ah, 0x0E
@@ -176,15 +171,15 @@ endFailedA20:
 </pre><p>    We just make sure to declare our NULL-terminated string constants.
 </p><pre>FAILED_STRING: db &#34;Failed to Enter Protected Mode.&#34;, 0
 SUCCESS_STRING: db &#34;Successfully Entered Protected Mode.&#34;, 0
-</pre><p>    Otherwise, we can now enter protected mode. We should first disable interrupts with the <code>cli</code> instruction, as to not only prevent exceptions during and after enabling protected mode, but also because future handling will require us to set up the Interrupt Descriptor Table (IDT).
+</pre><p>    Otherwise, we can now enter protected mode. We should first disable interrupts with the <code>cli</code> instruction, as to not only prevent exceptions while enabling protected mode, but also since future interrupt handling will require us to set up the Interrupt Descriptor Table (IDT).
 </p><pre>cli
-</pre><p>    We just have to set the Protected Mode (PE) bit on the special CPU register CR0.
+</pre><p>    We just have to set the Protected Mode Enable (PE) bit on the special CPU register CR0.
 </p><pre>mov          eax, cr0
 or           eax,0x1
 mov          cr0, eax
 </pre><p>    Finally, we long jump into protected mode, to clear the CPU's prefetch queue. Note that the address here references the code segment, defined in the GDT, whose selector is 1. The hardware wants the segment value to be the selector multiplied by 8.
 </p><pre>jmp          0x8:protectedMode
-</pre><p>    Printing the success string is slightly different than the failure string, because we now write directly to the text output of the video memory, located at the physical address 0xB8000. For each character we print, increment the pointer by 2, since each entry for a character is accompanied by an attribute (like its color). In this case, 0xF represents white, so we OR it with AH, and write AX to video memory.
+</pre><p>    Printing the success string is slightly different than the failure string, because we now write directly to the text output of the video memory, located at the physical address 0xB8000. For each character we print, increment the pointer by 2, since each entry for a character is accompanied by an attribute (like its color). In this case, <code>0xF</code> represents white, so we OR it with <code>AH</code>, and write <code>AX</code> to video memory.
 </p><pre>
 protectedMode:
     bits         32
