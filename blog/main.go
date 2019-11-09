@@ -143,7 +143,9 @@ func main() {
 		fpath := path.Join(static, strings.TrimPrefix(r.URL.Path, "/static/"))
 		info, err := os.Stat(fpath)
 		if err != nil {
-			log.Fatal(err)
+			log.Print(err)
+			http.NotFound(w, r)
+			return
 		}
 		etag := fmt.Sprintf("%x", sha256.Sum256([]byte(info.ModTime().String())))
 		if match := r.Header.Get("If-None-Match"); match != "" {
