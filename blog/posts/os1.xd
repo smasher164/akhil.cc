@@ -8,7 +8,7 @@
 </style>
 # Notes on OS Construction: Booting (WIP)
 #### September 30, 2019
-#### Updated: October 6, 2019
+#### Updated: November 18, 2019
 
 	When a computer is turned on, special firmware that is stored in non-volalite memory is run. The three most popular kinds are BIOS, UEFI, and Coreboot.
 ### BIOS
@@ -18,18 +18,36 @@
 	The BIOS's goal is to iterate through all of the attached media until it can successfully boot from one. At start-up, the CPU executes the BIOS program, and on x86 chips this will happen in 16-bit mode (also called real mode). During boot, the BIOS loads the first block from disk, called the Master Boot Record (MBR), which contains bootstrapping code, a partition table, and the disk signature. The MBR is 512 bytes and is loaded into the physical address 0x7C00. Why? [Apparently](0x7C00), this was a conscious decision by the IBM PC 5150 development team to leave surrounding memory available for interrupt vectors, the BIOS, and the OS. The BIOS checks that the signature matches 0xAA55 and proceeds to execute the boostrapping code.
 ### "Hello, World!"
 
-	I put together a simple BIOS-based boot program that prints "Hello, World!" to the screen. The source can be found on the [boot-bios-helloworld](boot-bios-helloworld) branch of my [oscons](oscons) GitHub repository. I use [YASM](YASM) to assemble the source into a flat binary named `boot.img`,
+	I put together a simple BIOS-based boot program that prints "Hello, World!" to the screen. The source can be found on the [boot-bios-helloworld](boot-bios-helloworld) branch of my [oscons](oscons) GitHub repository. I use [YASM](YASM) to assemble the source into a ELF object file named `boot.o`,
 ```
-$ yasm -f bin boot.asm -o boot.img
+$ yasm -f elf boot.asm -o boot.o
+```
+    [ld](LD) to link the object file into a binary that ensures the binary is loaded at address 0x7C00 and the last two bytes of the boot sector are 0xAA55,
+```
+$ ld.lld boot.o -N -T script.ld -b binary -o boot.img
+```
+    the linker script used by ld to express these constraints holds the following,
+```
+SECTIONS {
+    /* Define that the text section should be loaded at 0x7C00. */
+    .text 0x7C00 : {}
+    /* Place Boot Signature at the last two bytes of the sector. */
+    . : AT(ADDR(.text) + 510) {
+        SHORT(0xAA55);
+    }
+}
+```
+    [objcopy](OBJCOPY) to strip the binary of its ELF headers and produce the resultant disk image,
+```
+$ objcopy boot.img -S -O binary
 ```
     and [QEMU](QEMU) to emulate either an i386 or x86_64 machine with this image loaded onto its disk.
 ```
 $ qemu-system-<i386|x86_64> -drive format=raw,file=boot.img
 ```
-    We first issue some directives to tell YASM that we are assembling 16-bit instructions that should be loaded at the address 0x7C00.
+    We first issue a directive to tell YASM that we are assembling 16-bit instructions.
 ```
 bits         16
-org          0x7C00
 ```
     The BIOS interrupt vector 0x10 contains handlers that perform video services. For this program, we want to write to the Teletype, so we specify 0x0E as the handler in the `AH` register. This handler takes in the character to write in the `AL` register, so we can make use of the [LODSB](LODSB) instruction to iterate through the characters stored at `HELLO_STRING`, which expects the offset from the segment to be stored in the `SI` register.
 ```
@@ -48,11 +66,9 @@ mov          ah, 0x0E
 end:
     hlt
 ```
-    Make sure to declare the string constant in memory, and set the last two bytes in the block to 0xAA55, zeroing out the bytes in between.
+    Make sure to declare the string constant in memory.
 ```
 HELLO_STRING: db "Hello, World!", 0
-    times 510 - ($-$$) db 0
-    dw           0xAA55
 ```
     Executing this bootloader program should result in output like this:
 
@@ -270,6 +286,8 @@ end:
 [boot-bios-helloworld]: https://github.com/smasher164/oscons/tree/boot-bios-helloworld
 [oscons]: https://github.com/smasher164/oscons
 [YASM]: https://yasm.tortall.net/
+[LD]: https://lld.llvm.org/
+[OBJCOPY]: https://llvm.org/docs/CommandGuide/llvm-objcopy.html
 [QEMU]: https://www.qemu.org/
 [LODSB]: http://faydoc.tripod.com/cpu/lodsb.htm
 [INTBIOS]: https://en.wikipedia.org/wiki/BIOS_interrupt_call

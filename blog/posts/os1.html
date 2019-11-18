@@ -6,17 +6,29 @@
 		width: 100%;
 	}
 </style>
-</p><h1> Notes on OS Construction: Booting (WIP)</h1><h4> September 30, 2019</h4><h4> Updated: October 6, 2019</h4><p>	When a computer is turned on, special firmware that is stored in non-volalite memory is run. The three most popular kinds are BIOS, UEFI, and Coreboot.
+</p><h1> Notes on OS Construction: Booting (WIP)</h1><h4> September 30, 2019</h4><h4> Updated: November 18, 2019</h4><p>	When a computer is turned on, special firmware that is stored in non-volalite memory is run. The three most popular kinds are BIOS, UEFI, and Coreboot.
 </p><h3> BIOS</h3><p>    The original BIOS (Basic Input/Output System) was created for an IBM PC in the 70s. Since there was no official spec, PCs since then have conformed to match its behavior.
 
 	The BIOS's goal is to iterate through all of the attached media until it can successfully boot from one. At start-up, the CPU executes the BIOS program, and on x86 chips this will happen in 16-bit mode (also called real mode). During boot, the BIOS loads the first block from disk, called the Master Boot Record (MBR), which contains bootstrapping code, a partition table, and the disk signature. The MBR is 512 bytes and is loaded into the physical address 0x7C00. Why? <a href="https://www.glamenv-septzen.net/en/view/6">Apparently</a>, this was a conscious decision by the IBM PC 5150 development team to leave surrounding memory available for interrupt vectors, the BIOS, and the OS. The BIOS checks that the signature matches 0xAA55 and proceeds to execute the boostrapping code.
-</p><h3> "Hello, World!"</h3><p>	I put together a simple BIOS-based boot program that prints "Hello, World!" to the screen. The source can be found on the <a href="https://github.com/smasher164/oscons/tree/boot-bios-helloworld">boot-bios-helloworld</a> branch of my <a href="https://github.com/smasher164/oscons">oscons</a> GitHub repository. I use <a href="https://yasm.tortall.net/">YASM</a> to assemble the source into a flat binary named <code>boot.img</code>,
-</p><pre>$ yasm -f bin boot.asm -o boot.img
+</p><h3> "Hello, World!"</h3><p>	I put together a simple BIOS-based boot program that prints "Hello, World!" to the screen. The source can be found on the <a href="https://github.com/smasher164/oscons/tree/boot-bios-helloworld">boot-bios-helloworld</a> branch of my <a href="https://github.com/smasher164/oscons">oscons</a> GitHub repository. I use <a href="https://yasm.tortall.net/">YASM</a> to assemble the source into a ELF object file named <code>boot.o</code>,
+</p><pre>$ yasm -f elf boot.asm -o boot.o
+</pre><p>    <a href="https://lld.llvm.org/">ld</a> to link the object file into a binary that ensures the binary is loaded at address 0x7C00 and the last two bytes of the boot sector are 0xAA55,
+</p><pre>$ ld.lld boot.o -N -T script.ld -b binary -o boot.img
+</pre><p>    the linker script used by ld to express these constraints holds the following,
+</p><pre>SECTIONS {
+    /* Define that the text section should be loaded at 0x7C00. */
+    .text 0x7C00 : {}
+    /* Place Boot Signature at the last two bytes of the sector. */
+    . : AT(ADDR(.text) + 510) {
+        SHORT(0xAA55);
+    }
+}
+</pre><p>    <a href="https://llvm.org/docs/CommandGuide/llvm-objcopy.html">objcopy</a> to strip the binary of its ELF headers and produce the resultant disk image,
+</p><pre>$ objcopy boot.img -S -O binary
 </pre><p>    and <a href="https://www.qemu.org/">QEMU</a> to emulate either an i386 or x86_64 machine with this image loaded onto its disk.
 </p><pre>$ qemu-system-&lt;i386|x86_64&gt; -drive format=raw,file=boot.img
-</pre><p>    We first issue some directives to tell YASM that we are assembling 16-bit instructions that should be loaded at the address 0x7C00.
+</pre><p>    We first issue a directive to tell YASM that we are assembling 16-bit instructions.
 </p><pre>bits         16
-org          0x7C00
 </pre><p>    The BIOS interrupt vector 0x10 contains handlers that perform video services. For this program, we want to write to the Teletype, so we specify 0x0E as the handler in the <code>AH</code> register. This handler takes in the character to write in the <code>AL</code> register, so we can make use of the <a href="http://faydoc.tripod.com/cpu/lodsb.htm">LODSB</a> instruction to iterate through the characters stored at <code>HELLO_STRING</code>, which expects the offset from the segment to be stored in the <code>SI</code> register.
 </p><pre>mov          si, HELLO_STRING
 mov          ah, 0x0E
@@ -30,10 +42,8 @@ mov          ah, 0x0E
 
 end:
     hlt
-</pre><p>    Make sure to declare the string constant in memory, and set the last two bytes in the block to 0xAA55, zeroing out the bytes in between.
+</pre><p>    Make sure to declare the string constant in memory.
 </p><pre>HELLO_STRING: db &#34;Hello, World!&#34;, 0
-    times 510 - ($-$$) db 0
-    dw           0xAA55
 </pre><p>    Executing this bootloader program should result in output like this:
 
 <img src="/static/bios-boot-helloworld.png" alt='A window running QEMU that displays "Hello, World!"'></img>
