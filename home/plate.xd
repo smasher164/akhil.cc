@@ -1,0 +1,51 @@
+# What's on my Plate?
+
+- Email OSI about MIT-0
+- Enable persistent memory in Go
+- competitive pokemon meta stats lookup command line interface
+- Mexdown rendering errors.
+	- Paragraph/HTML collation
+- Finish oscons bootloader blog post
+	- >512-byte bootloader + simplified build process
+	- enter long mode
+	- calling into C
+	- UEFI
+	- Coreboot
+- decimal
+	- a fully conformant implementation of IEEE-754 (2008) decimal floating point specification.
+	- [https://github.com/golang/go/issues/12332#issuecomment-152540299]
+- math32 ([fma32](https://groups.google.com/forum/#!topic/golang-dev/Sti0bl2xUXQ))
+- Handout
+	- I want to be able to anonymously declare that I would like a particular title, and have someone anonymously and temporarily gift it to me.
+	- If I ask for something, 
+		- An entry in the site is made that gifters can give to
+		- A resource is made that you are redirected to. A resource has a lifetime.
+	- Anyone can submit a message + PDF to an entry for a maximum time.
+- Contribute to LLVM. Start with tools (clang-format [bug 37478](https://bugs.llvm.org/show_bug.cgi?id=37478)).
+- Vectorization proposal
+- TotalOrder proposal
+- [Migrate site to kubernetes](https://www.reddit.com/r/kubernetes/comments/d7v4z1/is_transitioning_to_kubernetes_is_beneficial_for/)
+	- Read through [kubernetes book](https://www.amazon.com/Kubernetes-Running-Dive-Future-Infrastructure/dp/1491935677)
+- Add more graph algorithms
+	- DFS
+	- BFS
+	- Cycle Detection
+	- Topological Sort
+	- Strongly connected components
+	- spanning tree
+		- minimum spanning tree
+- [Compile-time regex](https://github.com/golang/go/issues/26623#issuecomment-529179563)
+- Github Issues:
+	- [cmd/vet: add math check for erroneous math expressions](https://github.com/golang/go/issues/30951)
+	- [cmd/vet: warn about string(int) type conversions](https://github.com/golang/go/issues/32479)
+	- [image/jpeg: Decode is slow](https://github.com/golang/go/issues/24499)
+	- [mem: support plan 9](https://github.com/smasher164/mem/issues/2)
+	- [mexdown: gen/html: execute directive in user-specified shell](https://github.com/smasher164/mexdown/issues/2)
+	- [net: Lookup does not support Android/ios](https://github.com/golang/go/issues/34024)
+	- [proposal: net: add MarshalText/UnmarshalText to HardwareAddr](https://github.com/golang/go/issues/29678)
+	- [regexp: compilation results in stack overflow on js/wasm](https://github.com/golang/go/issues/34664)
+	- [x/net/html: add Escape/Unescape transformers](https://github.com/golang/go/issues/22585)
+	- [x/net/http/httpguts: add ParseCookie and ParseSetCookie](https://github.com/golang/go/issues/25194)
+	- [x/net/http/httpguts: add parser/accessors for Link header](https://github.com/golang/go/issues/31609)
+	- [x/playground: document all its tricks](https://github.com/golang/go/issues/32294)
+	- [x/tools/present: fix rendering on mobile](https://github.com/smasher164/tools/issues/1)

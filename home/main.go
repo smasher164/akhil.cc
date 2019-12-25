@@ -1,33 +1,23 @@
 package main
 
 import (
+	"io/ioutil"
 	"log"
 	"net/http"
-	"os"
 	"text/template"
-
-	"akhil.cc/mexdown/gen/html"
-	"akhil.cc/mexdown/parser"
 )
 
 func main() {
 	log.SetPrefix("www.akhil.cc: ")
 	log.SetFlags(0)
-	file, err := os.Open("home.xd")
-	if err != nil {
-		log.Println(err)
-		return
-	}
-	defer file.Close()
-	f, err := parser.Parse(file)
-	if err != nil {
-		log.Print(err)
-		return
-	}
-	out, err := html.Gen(f).Output()
-	if err != nil {
-		log.Print(err)
-		return
+	cache := make(map[string][]byte)
+	for _, name := range []string{"home.html", "plate.html"} {
+		b, err := ioutil.ReadFile(name)
+		if err != nil {
+			log.Fatal(err)
+			return
+		}
+		cache[name] = b
 	}
 	const stub = `<html>
 <head>
@@ -44,7 +34,10 @@ html {
 	tmpl := template.Must(template.New("").Parse(stub))
 	m := http.NewServeMux()
 	m.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		tmpl.Execute(w, out)
+		tmpl.Execute(w, cache["home.html"])
+	})
+	m.HandleFunc("/plate", func(w http.ResponseWriter, r *http.Request) {
+		tmpl.Execute(w, cache["plate.html"])
 	})
 	m.HandleFunc("/favicon.ico", func(w http.ResponseWriter, r *http.Request) {
 		w.Write(nil)
