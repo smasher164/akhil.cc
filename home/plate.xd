@@ -35,17 +35,20 @@
 	- spanning tree
 		- minimum spanning tree
 - [Compile-time regex](https://github.com/golang/go/issues/26623#issuecomment-529179563)
-- Github Issues:
-	- [cmd/vet: add math check for erroneous math expressions](https://github.com/golang/go/issues/30951)
-	- [cmd/vet: warn about string(int) type conversions](https://github.com/golang/go/issues/32479)
-	- [image/jpeg: Decode is slow](https://github.com/golang/go/issues/24499)
-	- [mem: support plan 9](https://github.com/smasher164/mem/issues/2)
-	- [mexdown: gen/html: execute directive in user-specified shell](https://github.com/smasher164/mexdown/issues/2)
-	- [net: Lookup does not support Android/ios](https://github.com/golang/go/issues/34024)
-	- [proposal: net: add MarshalText/UnmarshalText to HardwareAddr](https://github.com/golang/go/issues/29678)
-	- [regexp: compilation results in stack overflow on js/wasm](https://github.com/golang/go/issues/34664)
-	- [x/net/html: add Escape/Unescape transformers](https://github.com/golang/go/issues/22585)
-	- [x/net/http/httpguts: add ParseCookie and ParseSetCookie](https://github.com/golang/go/issues/25194)
-	- [x/net/http/httpguts: add parser/accessors for Link header](https://github.com/golang/go/issues/31609)
-	- [x/playground: document all its tricks](https://github.com/golang/go/issues/32294)
-	- [x/tools/present: fix rendering on mobile](https://github.com/smasher164/tools/issues/1)
+- Youtube channel
+	- Hindley-Milner Type Inference
+	- DFA Minimization
+	- IEEE-754 Decimal Floating Point
+- [cmd/vet: add math check for erroneous math expressions](https://github.com/golang/go/issues/30951)
+- [cmd/vet: warn about string(int) type conversions](https://github.com/golang/go/issues/32479)
+- [image/jpeg: Decode is slow](https://github.com/golang/go/issues/24499)
+- [mem: support plan 9](https://github.com/smasher164/mem/issues/2)
+- [mexdown: gen/html: execute directive in user-specified shell](https://github.com/smasher164/mexdown/issues/2)
+- [net: Lookup does not support Android/ios](https://github.com/golang/go/issues/34024)
+- [proposal: net: add MarshalText/UnmarshalText to HardwareAddr](https://github.com/golang/go/issues/29678)
+- [regexp: compilation results in stack overflow on js/wasm](https://github.com/golang/go/issues/34664)
+- [x/net/html: add Escape/Unescape transformers](https://github.com/golang/go/issues/22585)
+- [x/net/http/httpguts: add ParseCookie and ParseSetCookie](https://github.com/golang/go/issues/25194)
+- [x/net/http/httpguts: add parser/accessors for Link header](https://github.com/golang/go/issues/31609)
+- [x/playground: document all its tricks](https://github.com/golang/go/issues/32294)
+- [x/tools/present: fix rendering on mobile](https://github.com/smasher164/tools/issues/1)
