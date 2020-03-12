@@ -39,7 +39,6 @@
 	- DFA Minimization
 	- IEEE-754 Decimal Floating Point
 - [cmd/vet: add math check for erroneous math expressions](https://github.com/golang/go/issues/30951)
-- [cmd/vet: warn about string(int) type conversions](https://github.com/golang/go/issues/32479)
 - [image/jpeg: Decode is slow](https://github.com/golang/go/issues/24499)
 - [mem: support plan 9](https://github.com/smasher164/mem/issues/2)
 - [mexdown: gen/html: execute directive in user-specified shell](https://github.com/smasher164/mexdown/issues/2)
