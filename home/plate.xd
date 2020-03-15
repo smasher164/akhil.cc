@@ -48,5 +48,4 @@
 - [x/net/html: add Escape/Unescape transformers](https://github.com/golang/go/issues/22585)
 - [x/net/http/httpguts: add ParseCookie and ParseSetCookie](https://github.com/golang/go/issues/25194)
 - [x/net/http/httpguts: add parser/accessors for Link header](https://github.com/golang/go/issues/31609)
-- [x/playground: document all its tricks](https://github.com/golang/go/issues/32294)
 - [x/tools/present: fix rendering on mobile](https://github.com/smasher164/tools/issues/1)
