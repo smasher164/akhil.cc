@@ -11,7 +11,7 @@ func main() {
 	log.SetPrefix("www.akhil.cc: ")
 	log.SetFlags(0)
 	cache := make(map[string][]byte)
-	for _, name := range []string{"home.html", "plate.html"} {
+	for _, name := range []string{"home.html", "plate.html", "stayhome.html"} {
 		b, err := ioutil.ReadFile(name)
 		if err != nil {
 			log.Fatal(err)
@@ -38,6 +38,9 @@ html {
 	})
 	m.HandleFunc("/plate", func(w http.ResponseWriter, r *http.Request) {
 		tmpl.Execute(w, cache["plate.html"])
+	})
+	m.HandleFunc("/stayhome", func(w http.ResponseWriter, r *http.Request) {
+		tmpl.Execute(w, cache["stayhome.html"])
 	})
 	m.HandleFunc("/favicon.ico", func(w http.ResponseWriter, r *http.Request) {
 		w.Write(nil)
