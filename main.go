@@ -36,8 +36,9 @@ func hsts(h http.Handler) http.Handler {
 }
 
 type host struct {
-	Route  string
-	Target string
+	Route    string
+	Target   string
+	Redirect bool
 }
 
 type serveMux struct {
@@ -76,11 +77,15 @@ func (mux *serveMux) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 func makeProxy(hosts []host) http.Handler {
 	m := new(serveMux)
 	for _, h := range hosts {
-		utarget, err := url.Parse(h.Target)
-		if err != nil {
-			log.Fatalln(err)
+		if h.Redirect {
+			m.Handle(h.Route, http.RedirectHandler(h.Target, http.StatusFound))
+		} else {
+			utarget, err := url.Parse(h.Target)
+			if err != nil {
+				log.Fatalln(err)
+			}
+			m.Handle(h.Route, httputil.NewSingleHostReverseProxy(utarget))
 		}
-		m.Handle(h.Route, httputil.NewSingleHostReverseProxy(utarget))
 	}
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if !strings.HasPrefix(r.Host, "www.") {

@@ -16,6 +16,10 @@ Target = "http://127.0.0.1:8080"
 Route = '^www\.akhil\.cc/mexdown(/.*)?$'
 Target = "http://127.0.0.1:8081"
 [[Hosts]]
+Route = '^www\.akhil\.cc/blm(/.*)?$'
+Target = "https://docs.google.com/document/d/1-0KC83vYfVQ-2freQveH43PWxuab2uWDEGolzrNoIks/preview?pru=AAABcoq-5qM*tOU5AuKqyifaZFkvL1wZQw#"
+Redirect = true
+[[Hosts]]
 Route = '^www\.akhil\.cc/'
 Target = "http://127.0.0.1:8082"
 [[Hosts]]
