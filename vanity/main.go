@@ -34,9 +34,18 @@ func main() {
 			Dir:  "https://github.com/smasher164/mexdown/blob/master{/dir}",
 			File: "https://github.com/smasher164/mexdown/blob/master{/dir}/{file}#L{line}",
 		},
+		{
+			Path:   "/git-fixup",
+			Prefix: "akhil.cc/git-fixup",
+			VCS:    "git", Root: "https://github.com/smasher164/git-fixup",
+			Home: "https://github.com/smasher164/git-fixup/",
+			Dir:  "https://github.com/smasher164/git-fixup/blob/master{/dir}",
+			File: "https://github.com/smasher164/git-fixup/blob/master{/dir}/{file}#L{line}",
+		},
 	}
 	m := http.NewServeMux()
 	for _, im := range imports {
+		im := im
 		m.HandleFunc(im.Path+"/", func(w http.ResponseWriter, r *http.Request) {
 			host, _, err := net.SplitHostPort(r.Host)
 			if err != nil {
