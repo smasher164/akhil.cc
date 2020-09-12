@@ -152,6 +152,7 @@ func main() {
 		TLSConfig: &tls.Config{
 			GetCertificate:           cert.GetCertificate,
 			PreferServerCipherSuites: true,
+			MinVersion:               tls.VersionTLS13,
 			NextProtos: []string{
 				"h2", "http/1.1", // enable HTTP/2
 				acme.ALPNProto, // enable tls-alpn ACME challenges
