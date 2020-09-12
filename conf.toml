@@ -6,7 +6,8 @@ Valid = [
 	'^tmsim\.akhil\.cc$', '^www\.tmsim\.akhil\.cc$',
 	'^stay\.akhil\.cc$', '$www\.stay\.akhil\.cc$',
 	'^staging\.stay\.akhil\.cc$', '^www\.staging\.stay\.akhil\.cc$',
-	'^\d+\.staging\.stay\.akhil\.cc$', '^www\.\d+\.staging\.stay\.akhil\.cc$'
+	'^\d+\.staging\.stay\.akhil\.cc$', '^www\.\d+\.staging\.stay\.akhil\.cc$',
+	'^stocks\.akhil\.cc$', '^www\.stocks\.akhil\.cc$'
 ]
 Email = "aindurti@gmail.com"
 [[Hosts]]
@@ -40,3 +41,6 @@ Target = "http://127.0.0.1:8086"
 [[Hosts]]
 Route = '^www\.\d+\.staging\.stay\.akhil\.cc/'
 Target = "http://127.0.0.1:8086"
+[[Hosts]]
+Route = '^www\.stocks\.akhil\.cc/'
+Target = "http://127.0.0.1:8087"
