@@ -87,6 +87,17 @@ pre, code {
 	font-family: 'DejaVu Sans Mono', 'monospace';
     font-size: 0.9em;
 }
+a:link {
+    text-decoration: none;
+    color: #9c27b0;
+}
+a:visited {
+	color: #610071;
+}
+a:hover, a:active {
+    text-decoration: underline;
+    color: #2196F3;
+}
 .toc_post {
 	margin-bottom: 1em;
 }
