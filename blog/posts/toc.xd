@@ -1,5 +1,11 @@
 # blog.akhil.cc
 
+```post /static-jni
+Statically Link JNI Libraries with GraalVM Native Image
+
+April 21, 2021
+```
+
 ```post /os-notes-booting
 Notes on OS Construction: Booting (WIP)
 

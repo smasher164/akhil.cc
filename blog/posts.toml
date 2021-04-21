@@ -46,3 +46,10 @@ File = "os1.html"
 Title = "Notes on OS Construction: Booting (WIP)"
 Description = ""
 Created = 2019-09-30
+
+[[Posts]]
+Route = "/static-jni"
+File = "static_jni.html"
+Title = "Statically Link JNI Libraries with GraalVM Native Image"
+Description = ""
+Created = 2021-04-21

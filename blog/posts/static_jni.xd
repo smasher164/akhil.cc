@@ -1,0 +1,182 @@
+<style>
+	p {
+		white-space: pre-wrap;
+	}
+</style>
+# Statically Link JNI Libraries with GraalVM Native Image
+#### April 21, 2021
+
+    GraalVM Native Image performs ahead-of-time (AOT) compilation for programs that run on the JVM. This provides a convenient way of distributing a program to a user, without relying on them having the JVM installed. However, applications that call into native libraries through the Java Native Interface (JNI) still have to dynamically load a shared library to do so. It would be nice to statically link the library to the compiled executable.
+
+    There is a way to do this with native-image, with the caveat that its API is undocumented and unstable. This method uses [Features](https://www.graalvm.org/sdk/javadoc/index.html?org/graalvm/nativeimage/hosted/Feature.html), which are extensions that hook into the native image generation process. Huge props to Kristof Dhondt ([*@kristofdho*](https://github.com/kristofdho)) for first showing me this method on [https://github.com/oracle/graal/issues/3359].
+
+    All of the source code for this example can be found at [https://github.com/smasher164/staticjni].
+### Hello from JNI!
+
+    Let's create a "Hello World" project to show that statically linking a JNI library works. To keep it explicit, we will avoid using external build systems and package managers. All you need is GraalVM (w/ native-image), a C compiler (gcc, clang, msvc), and an archival tool (ar, lib).
+
+    We will create a `HelloWorld` class with a `main` method in a file named `HelloWorld.java`:
+```
+public class HelloWorld {
+    public static void main(String[] args) { ... }
+}
+```
+    This class will call into our native `print()` implementation, so we declare a method stub for `print()` and call it inside `main`.
+```
+public class HelloWorld {
+    private static native void print();
+    public static void main(String[] args) {
+        HelloWorld.print();
+    }
+}
+```
+    The next step is the generate a header file for this stub that our C code can include and implement. The command below will place the generated header named `HelloWorld.h` in the current directory.
+```
+javac -h . HelloWorld.java
+```
+    Our C code, which I'll place in `Native.c`, will contain the `print()` implementation that matches the signature of the function in the generated header file.
+```
+#include <jni.h>
+#include <stdio.h>
+#include "HelloWorld.h"
+
+JNIEXPORT void JNICALL Java_HelloWorld_print
+  (JNIEnv * env, jclass class) {
+        printf("Hello world; this is C talking!\n");
+  }
+```
+    Now for the interesting part -- adding a `Feature`. Essentially, we want to hook into an early part of `native-image`'s process and tell it to treat our library as built-in.
+
+    First, we should add a dependency to `org.graalvm.nativeimage/svm`, since we will use its libraries to add our hooks. In our case, we'll just download its JAR from [https://mvnrepository.com/artifact/org.graalvm.nativeimage/svm], and extract it into our classpath.
+
+    Now we can add the `Feature`. To do this, we'll create a class `NativeFeature` that runs before static analysis:
+```
+import com.oracle.svm.core.annotate.AutomaticFeature;
+import com.oracle.svm.core.jdk.NativeLibrarySupport;
+import com.oracle.svm.core.jdk.PlatformNativeLibrarySupport;
+import com.oracle.svm.hosted.FeatureImpl;
+import com.oracle.svm.hosted.c.NativeLibraries;
+import org.graalvm.nativeimage.hosted.Feature;
+
+@AutomaticFeature
+public class NativeFeature implements Feature {
+
+    @Override
+    public void beforeAnalysis(BeforeAnalysisAccess access) { ... }
+}
+```
+    The first thing to do is register our library as built in. Here, I'm assuming that the compiled library's name on our system will be something like `libNative.a` or `Native.lib`, so I'll pass in `"Native"` as the name of the built-in library.
+```
+@Override
+public void beforeAnalysis(BeforeAnalysisAccess access) {
+    // Treat "Native" as a built-in library.
+    NativeLibrarySupport.singleton().preregisterUninitializedBuiltinLibrary("Native");
+}
+```
+    Then we mark calls to the package prefix `"HelloWorld"` as calls to a built-in library.
+```
+@Override
+public void beforeAnalysis(BeforeAnalysisAccess access) {
+    // Treat "Native" as a built-in library.
+    NativeLibrarySupport.singleton().preregisterUninitializedBuiltinLibrary("Native");
+    // Treat JNI calls in "HelloWorld" as calls to built-in library.
+    PlatformNativeLibrarySupport.singleton().addBuiltinPkgNativePrefix("HelloWorld");
+    NativeLibraries nativeLibraries = ((FeatureImpl.BeforeAnalysisAccessImpl) access).getNativeLibraries();
+}
+```
+    We then tell native-image to update its dependency graph so that "Native" depends on "jvm". Now the entire class should look like this:
+```
+import com.oracle.svm.core.annotate.AutomaticFeature;
+import com.oracle.svm.core.jdk.NativeLibrarySupport;
+import com.oracle.svm.core.jdk.PlatformNativeLibrarySupport;
+import com.oracle.svm.hosted.FeatureImpl;
+import com.oracle.svm.hosted.c.NativeLibraries;
+import org.graalvm.nativeimage.hosted.Feature;
+
+@AutomaticFeature
+public class NativeFeature implements Feature {
+
+    @Override
+    public void beforeAnalysis(BeforeAnalysisAccess access) {
+        // Treat "Native" as a built-in library.
+        NativeLibrarySupport.singleton().preregisterUninitializedBuiltinLibrary("Native");
+        // Treat JNI calls in "HelloWorld" as calls to built-in library.
+        PlatformNativeLibrarySupport.singleton().addBuiltinPkgNativePrefix("HelloWorld");
+        NativeLibraries nativeLibraries = ((FeatureImpl.BeforeAnalysisAccessImpl) access).getNativeLibraries();
+        // Add "jvm" as a dependency to "Native".
+        nativeLibraries.addStaticJniLibrary("Native");
+    }
+}
+```
+    For our final step we'll just create a `manifest.txt` that specifies our main class:
+```
+Main-Class: HelloWorld
+```
+### Time to build
+
+    If you're following along, the directory should look something like this:
+```
+/path/to/project
+├── HelloWorld.h
+├── HelloWorld.java
+├── Native.c
+├── NativeFeature.java
+├── com
+│   └── oracle
+│       └── svm
+│           │ ... <more packages> ...
+└── manifest.txt
+```
+    Compile the Java source files and package them into a Jar. The classpath is the current directory.
+```
+$ javac -cp . HelloWorld.java NativeFeature.java
+$ jar cfm HelloWorld.jar manifest.txt HelloWorld.class NativeFeature.class
+```
+    Compile and archive a static C library. Ensure that you update the include path with `<JAVA_HOME>/include` and `<JAVA_HOME>/include/<platform>`, where `<JAVA_HOME>` is the path to your JDK installation, and `<platform>` is the target, e.g. `darwin`, `linux`, `win32`.
+
+    So on MacOS (assuming clang or gcc)
+```
+$ cc -c -I "$JAVA_HOME/include" -I "$JAVA_HOME/include/darwin" -o native.o Native.c
+$ ar rcs libNative.a native.o
+```
+    On Linux (assuming clang or gcc)
+```
+$ cc -c -I "$JAVA_HOME/include" -I "$JAVA_HOME/include/linux" -o native.o Native.c
+$ ar rcs libNative.a native.o
+```
+    and on Windows (assuming msvc)
+```
+$ cl /I "%JAVA_HOME%\include" /I "%JAVA_HOME%\include\win32" /c Native.c
+$ lib Native.obj
+```
+    On MacOS and Linux you should see a file named `libNative.a` in your current directory. On Windows, you should see `Native.lib`.
+
+    Now the final step is to build the executable. We pass in the jar and the search path for our C library.
+```
+$ native-image -jar HelloWorld.jar -H:CLibraryPath=.
+```
+    You should now have an executable named `HelloWorld` in your current directory! Run it and you should see it print
+```
+Hello world; this is C talking!
+```
+    to the console. Move the executable around and change the library path all you want but the executable should still run. The JNI library is statically linked. You can verify this by tracing the syscalls on the executable. For example on Linux, running strace on the executable doesn't refer to our library in any way.
+```
+$ strace -e trace=open,openat ./HelloWorld
+openat(AT_FDCWD, "/etc/ld.so.cache", O_RDONLY|O_CLOEXEC) = 3
+openat(AT_FDCWD, "/lib/x86_64-linux-gnu/libpthread.so.0", O_RDONLY|O_CLOEXEC) = 3
+openat(AT_FDCWD, "/lib/x86_64-linux-gnu/libdl.so.2", O_RDONLY|O_CLOEXEC) = 3
+openat(AT_FDCWD, "/lib/x86_64-linux-gnu/libz.so.1", O_RDONLY|O_CLOEXEC) = 3
+openat(AT_FDCWD, "/lib/x86_64-linux-gnu/libc.so.6", O_RDONLY|O_CLOEXEC) = 3
+openat(AT_FDCWD, "/proc/self/maps", O_RDONLY) = 3
+openat(AT_FDCWD, "/path/to/project/HelloWorld", O_RDONLY) = 3
+openat(AT_FDCWD, "/proc/self/maps", O_RDONLY|O_CLOEXEC) = 4
+openat(AT_FDCWD, "/proc/net/if_inet6", O_RDONLY) = 5
+openat(AT_FDCWD, "/proc/net/ipv6_route", O_RDONLY) = 4
+openat(AT_FDCWD, "/proc/net/if_inet6", O_RDONLY) = 4
+openat(AT_FDCWD, "/proc/net/if_inet6", O_RDONLY) = 4
+Hello world; this is C talking!
++++ exited with 0 +++
+```
+### Stability
+
+    There's no guarantee that this method will stick around from release-to-release of GraalVM, so if statically linking JNI libraries is something you care about, please check out [https://github.com/oracle/graal/issues/3359], which is a feature request for a stable method of statically linking JNI libraries.
