@@ -2,6 +2,9 @@
 	p {
 		white-space: pre-wrap;
 	}
+    a {
+        word-wrap: break-word;
+    }
 </style>
 </p><h1> Statically Link JNI Libraries with GraalVM Native Image</h1><h4> April 21, 2021</h4><p>    GraalVM Native Image performs ahead-of-time (AOT) compilation for programs that run on the JVM. This provides a convenient way of distributing a program to a user, without relying on them having the JVM installed. However, applications that call into native libraries through the Java Native Interface (JNI) still have to dynamically load a shared library to do so. It would be nice to statically link the library to the compiled executable.
 

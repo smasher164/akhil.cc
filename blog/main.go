@@ -98,7 +98,7 @@ func (b *blog) init(posts map[string]string) {
 	for _, post := range b.posts {
 		b.feed.Items = append(b.feed.Items, &feeds.Item{
 			Title:       post.Title,
-			Link:        &feeds.Link{Href: site + post.Route},
+			Link:        &feeds.Link{Href: "https://" + site + post.Route},
 			Description: post.Description,
 			Created:     post.Created,
 		})

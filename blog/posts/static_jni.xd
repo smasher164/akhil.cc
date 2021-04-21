@@ -2,6 +2,9 @@
 	p {
 		white-space: pre-wrap;
 	}
+    a {
+        word-wrap: break-word;
+    }
 </style>
 # Statically Link JNI Libraries with GraalVM Native Image
 #### April 21, 2021
