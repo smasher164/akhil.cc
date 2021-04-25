@@ -24,6 +24,10 @@ Route = '^www\.akhil\.cc/blm(/.*)?$'
 Target = "https://blacklivesmatters.carrd.co/"
 Redirect = true
 [[Hosts]]
+Route = '^www\.akhil\.cc/covid-india(/.*)?$'
+Target = "https://docs.google.com/document/d/1eiobgyrl8iz-R1Dz7c4R5pzzzkuZLBj99vaC7T_UeVo/edit?usp=sharing"
+Redirect = true
+[[Hosts]]
 Route = '^www\.akhil\.cc/'
 Target = "http://127.0.0.1:8082"
 [[Hosts]]
