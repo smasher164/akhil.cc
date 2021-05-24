@@ -27,6 +27,9 @@ html {
 	position: relative;
 	width: 100%;
 	height: 100%;
+	font-family: sans-serif;
+	white-space: pre-line;
+	margin-left: 1em;
 }
 </style>
 </head>
@@ -35,12 +38,6 @@ html {
 	m := http.NewServeMux()
 	m.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		tmpl.Execute(w, cache["home.html"])
-	})
-	m.HandleFunc("/plate", func(w http.ResponseWriter, r *http.Request) {
-		tmpl.Execute(w, cache["plate.html"])
-	})
-	m.HandleFunc("/stayhome", func(w http.ResponseWriter, r *http.Request) {
-		tmpl.Execute(w, cache["stayhome.html"])
 	})
 	m.HandleFunc("/favicon.ico", func(w http.ResponseWriter, r *http.Request) {
 		w.Write(nil)
