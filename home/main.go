@@ -24,12 +24,9 @@ func main() {
 	<meta charset="UTF-8"><meta name="viewport" content="width=device-width, maximum-scale=1.0">
 <style>
 html {
-	position: relative;
-	width: 100%;
-	height: 100%;
 	font-family: sans-serif;
 	white-space: pre-line;
-	margin-left: 1em;
+	padding-left: 1rem;
 }
 </style>
 </head>
