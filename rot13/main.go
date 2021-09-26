@@ -40,23 +40,27 @@ func main() {
 			fmt.Fprintf(w, "pass a rot 13'd URL")
 			return
 		}
-		// log.Printf("URL=%v", r.URL)
-		// log.Printf("RequestURI=%v", r.RequestURI)
+		// check auth (accept any user+pass)
+		_, _, ok := r.BasicAuth()
+		if !ok {
+			w.Header().Set("WWW-Authenticate", `Basic realm="restricted", charset="UTF-8"`)
+			http.Error(w, "Unauthorized", http.StatusUnauthorized)
+			return
+		}
 		uri := strings.TrimPrefix(r.RequestURI, "/")
 		if !strings.HasPrefix(uri, rot13("http://")) && !strings.HasPrefix(uri, rot13("https://")) {
 			uri = rot13("https://") + uri
 		}
-		// log.Printf("Trimmed URI=%v", uri)
 		http.Redirect(w, r, rot13(uri), http.StatusFound)
 	})
 	m.HandleFunc("/favicon.ico", func(w http.ResponseWriter, r *http.Request) {
 		w.Write(nil)
 	})
 	http.ListenAndServe(":8080", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if r.Host != "www.rot13.akhil.cc" {
-			http.NotFound(w, r)
-			return
-		}
+		// if r.Host != "www.rot13.akhil.cc" {
+		// 	http.NotFound(w, r)
+		// 	return
+		// }
 		m.ServeHTTP(w, r)
 	}))
 }
