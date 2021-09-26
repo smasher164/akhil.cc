@@ -1,0 +1,4 @@
+FROM scratch
+EXPOSE 8080
+COPY rot13 /
+ENTRYPOINT ["/rot13"]
