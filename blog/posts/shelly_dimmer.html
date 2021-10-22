@@ -1,0 +1,112 @@
+<p><style>
+	p {
+		white-space: pre-wrap;
+	}
+    a {
+        word-wrap: break-word;
+    }
+	.center {
+		text-align: center;
+	}
+    .center > * {
+		max-width: min(540px, 100%);
+	}
+    figcaption {
+        font-style: italic;
+    }
+</style>
+</p><h1> Installing the Shelly Dimmer 2</h1><h2> Integrated with Home Assistant and Tailscale</h2><h4> October 22, 2021</h4><p>    This past weekend, I took my first leap into home automation! I had wanted to be able to control my bedroom lights without the switch, so after evaluating smart bulbs, dimming switches, and alternate light controllers, I decided to install the <a href="https://shelly.cloud/products/shelly-dimmer-2-smart-home-light-controller/">Shelly Dimmer 2</a>.
+
+    The Shelly Dimmer allows me to keep the switches, bulbs, and panel the same, while only making a wiring change behind the panel. I'm also not particularly interested in alternate colors or physical dimming, so this is the perfect option for me.
+</p><h3> Background</h3><p>    This is what the switch panel looks like in my bedroom. The light switch is a 1301 7w Single Pole Single Throw switch. This means there is only one switch (pole) that controls one light (throw). In other words, a basic on-off switch.
+
+</p><figure class="center">
+    <img src="/static/switch-panel.jpg"
+        alt='The switch panel in my bedroom, with three two-way switches. The first two are turned off, while the third, which controls the light, is turned on.'>
+    <figcaption>The third switch controls the light</figcaption>
+</figure>
+<p>    Note: I knew next to nothing about electrical wiring prior to this, aside from a faint memory of how AC circuits worked from my university physics class. Fortunately, I have a friend who clarififed my understanding throughout this process. Thanks <a href="https://twitter.com/DICT_DON_DRAMA">Yugank</a>!
+</p><h3> Preparation</h3><p>    I didn't realize I needed so many additional components apart from the Shelly. For instance, at the least, I needed
+</p><ul><li class="bullet"> 12 gauge wire that can insulate 120 volts (preferably two colors to distinguish neutral from the others)</li><li class="bullet"> Wire strippers</li></ul><p>    However, for safety reasons, I also bought
+</p><ul><li class="bullet"> Electrician's gloves (actually only found general-purpose ones)</li><li class="bullet"> Wire tester (to distinguish the Line from the Load)</li></ul><p>    The Shelly guide presents different installation methods, but the setup for "standard power grid with neutral" is the one I suspected would suit my home's wiring, but I intended to clarify.
+
+</p><figure class="center">
+    <img src="/static/shelly-figure-1.jpg" alt='setup for standard power grid with neutral'>
+    <figcaption>Setup for standard power grid with neutral</figcaption>
+</figure>
+<p>    The other thing to clarify was which wire coming from the switch was the Line (power) or the Load (light). So with the gloves on, I unscrewed the panel.
+
+</p><figure class="center">
+    <img src="/static/switch-panel-unscrewed.jpg"
+        alt='The unscrewed panel. Silver switches screwed to a blue container inset into the wall. Behind the switches is a jumble of wires.'>
+    <figcaption>Unscrewed panel</figcaption>
+</figure>
+<p>    I observed that on the left side, the switch has a white wire connected to ground, and on the right side it has two black wires. Using a wire tester, I determined that the top wire was the Load, and the bottom wire was the Line.
+
+    Thanks to the advice of the online wiring videos, I turned off power to my room from by basement's circuit breaker. The next step was to find a wire nut that would hold the neutral wires. A little fidgeting allowed me to pull it out. Good to confirm that I can proceed with the standard installation.
+
+</p><figure class="center">
+    <img src="/static/neutral-wire-nut.jpg"
+        alt='The beige wire nut holding neutral wires is pulled out from behind the switches.'>
+    <figcaption>Wire nut holding neutral wires</figcaption>
+</figure>
+<h3> Installation</h3><p>    First, I disconnected the Load (top) wire from the switch, and connected it to the O (output) hole on the dimmer.
+
+</p><figure class="center">
+    <img src="/static/disconnected-load.jpg"
+        alt='Side perspective of the switch. Hook at the end of black Load wire is removed from screw.'>
+    <figcaption>Load wire unhooked from switch</figcaption>
+</figure>
+<p>    Second, I disconnected the Line (bottom) wire from switch, and connected it to the middle L (Line) hole on the dimmer.
+
+</p><figure class="center">
+    <img src="/static/line-load-shelly.jpg"
+        alt='Line and Load wires both connected to the Shelly.'>
+    <figcaption>Line and Load wires both connected to the Shelly</figcaption>
+</figure>
+<p>    Third, I connected a new black wire from the Load (top) screw on the switch to SW1 hole on the dimmer.
+
+</p><figure class="center">
+    <img src="/static/load-sw1.jpg"
+        alt='Hooked wire connected to Load screw on switch from SW1 on the dimmer.'>
+    <figcaption>Load on switch connected to SW1</figcaption>
+</figure>
+<p>    Fourth, I connected a new black wire from the Line (bottom) screw on the switch to the L (Line) hole on the dimmer.
+
+    And finally, I connected a new pink wire from the N (Neutral) hole on the dimmer to the nut containing the neutral wires. I unscrewed the wire nut and overlayed (and slightly twisted) the pink wire over the others. Then I screwed the nut back on.
+
+</p><figure class="center">
+    <img src="/static/neutral-connected.jpg"
+        alt='Neutral (pink) wire is now connected to the bundle inside wire nut.'>
+    <figcaption>Neutral (pink) wire is now connected to the bundle inside wire nut</figcaption>
+</figure>
+<p>    After completing the installation, it looked like this.
+
+</p><figure class="center">
+    <img src="/static/fully-connected.jpg"
+        alt='Shelly and switch are hanging out but are now fully connected.'>
+    <figcaption>Fully connected dimmer</figcaption>
+</figure>
+<p>    I turned the power back on from the basement, flicked the switch on, and observed the lights transitioning into brightness.
+
+    I then proceeded to get the Shelly connected to the home wifi, before turning my room's power back off to screw the panel back on.
+
+</p><figure class="center">
+    <video controls>
+        <source src="/static/lights-demo.webm" type="video/webm">
+        <source src="/static/lights-demo.mp4" type="video/mp4">
+    </video>
+    <figcaption>Demo of it all working</figcaption>
+</figure>
+<h3> Post-Installation</h3><p>    Initially, my toggle switch only triggered a change when it went from its "Off" position to its "On" position. The Shelly web interface allowed me to change the button type to "Edge", to allow both positions of the switch to trigger a state change.
+
+    However, using the Shelly interface reconfirmed by belief that Home Assistant was the right way to go. I installed it on my Raspberry Pi NAS running NixOS, and linked it to the dimmer. My configuration can be found here: <a href="https://github.com/smasher164/nas/blob/bc8a5780ee6354fa732a0c406a924f14135f43a7/configuration.nix#L90">https://github.com/smasher164/nas/blob/bc8a5780ee6354fa732a0c406a924f14135f43a7/configuration.nix#L90</a>.
+
+    Even better, exposing Home Assistant over Tailscale's VPN lets me remotely control my bedroom lights!
+
+</p><figure class="center">
+    <img src="/static/hass-lights.png"
+        alt='Home Assistant app controlling the Shelly (notice I'm on cellular data!).'>
+    <figcaption>Home Assistant app controlling the Shelly (notice I'm on cellular data!)</figcaption>
+</figure>
+<h3> Thoughts</h3><p>    Although I was nervous at first, this built my confidence to try my hand at more home automation. Next up is the garage!</p>

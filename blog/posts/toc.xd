@@ -1,5 +1,11 @@
 # blog.akhil.cc
 
+```post /shelly-dimmer
+Installing the Shelly Dimmer 2
+
+October 22, 2021
+```
+
 ```post /static-jni
 Statically Link JNI Libraries with GraalVM Native Image
 

@@ -53,3 +53,10 @@ File = "static_jni.html"
 Title = "Statically Link JNI Libraries with GraalVM Native Image"
 Description = ""
 Created = 2021-04-21
+
+[[Posts]]
+Route = "/shelly-dimmer"
+File = "shelly_dimmer.html"
+Title = "Installing the Shelly Dimmer 2"
+Description = ""
+Created = 2021-10-22

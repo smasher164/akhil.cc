@@ -72,7 +72,9 @@ HELLO_STRING: db "Hello, World!", 0
 ```
     Executing this bootloader program should result in output like this:
 
+```cat
 <img src="/static/bios-boot-helloworld.png" alt='A window running QEMU that displays "Hello, World!"'></img>
+```
 ### Protected Mode
 
     Bootloaders will often run in multiple stages, in order to access more program memory. The bootstrapping code in the MBR will usually load another block corresponding to the Volume Boot Record (VBR), which is located in a separate partition that is found by scanning the MBR's partition table. Eventually the loader will want to enter protected mode, with access to a larger address space and 32-bit registers.
@@ -271,11 +273,15 @@ end:
 ```
     If the bootloader was able to successfully enter protected mode, you should see output like the following:
 
+```cat
 <img src="/static/bios-boot-protected-success.png" alt='A window running QEMU that displays "Successfully Entered Protected Mode."'></img>
+```
 
     Otherwise, you should see:
 
+```cat
 <img src="/static/bios-boot-protected-failure.png" alt='A window running QEMU that displays "Failed to Enter Protected Mode."'></img>
+```
 ### **TODO:** *Long Mode*
 
     **NOTE:** *There is an additional process when entering long mode, a.k.a 64-bit mode, which involves CPU feature detection, setting up paging, setting the long mode bit in the model-specific-register, and updating the GDT and IDT.*
