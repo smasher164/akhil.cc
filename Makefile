@@ -10,7 +10,7 @@ build:
 	CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o akhilcc
 	docker build . --tag akhilcc:prod
 deploy:
-	GO111MODULE=off CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o akhilcc
+	CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o akhilcc
 	docker build . --tag akhilcc:prod
 	docker tag akhilcc:prod smasher164/akhilcc:prod
 	docker push smasher164/akhilcc:prod
