@@ -27,6 +27,11 @@ html {
 	font-family: sans-serif;
 	white-space: pre-line;
 	padding-left: 1rem;
+	font-size: 1.1rem;
+}
+.bullet {
+	padding-bottom: 0.5rem;
+	line-height: 1.1rem;
 }
 </style>
 </head>

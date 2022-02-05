@@ -8,7 +8,7 @@ build: *.xd
 	docker build . --tag home:prod
 	docker run -detach -p 8080:8080 home:prod
 deploy: *.xd
-	GO111MODULE=off CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build
+	CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o home
 	for file in $^ ; do \
 		echo $${file::$${#file}-3} | xargs -I {} mexdown html {}.xd -o {}.html ; \
 	done
