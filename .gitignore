@@ -27,3 +27,4 @@
 !*.tex
 !go.mod
 !go.sum
+!flake.lock
