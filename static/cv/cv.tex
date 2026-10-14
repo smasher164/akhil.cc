@@ -1,0 +1,213 @@
+% Akhil Indurti -- CV.  Build: pdflatex cv.tex   (see README.md)
+\documentclass[10pt,letterpaper]{article}
+\usepackage[left=0.5in,textwidth=7.4in,top=0.33in,bottom=0.5in]{geometry}
+\usepackage{tabularx}
+\usepackage[colorlinks,allcolors=blue,pdftitle={Akhil Indurti},pdfauthor={Akhil Indurti}]{hyperref}
+
+% ---- Type and page ------------------------------------------------------
+\makeatletter
+\renewcommand\normalsize{\@setfontsize\normalsize\@viiipt{10pt}}   % 8pt Computer Modern on a 10pt grid
+\makeatother
+\normalsize
+\pagestyle{empty}
+\setlength\parindent{0pt}
+\setlength\parskip{0pt}
+\raggedbottom
+\hyphenation{ScyllaDB MongoDB DigitalOcean}   % product names never hyphenate
+
+% ---- Layout lengths ------------------------------------------------------
+\newlength\bodyindent  \setlength\bodyindent{0.75in}  % body column is inset this much from both ends of the rules
+\newlength\tablehang   \setlength\tablehang{0.45in}   % label tables (Skills, Projects) stick out this far left of the body
+\newlength\labelgap    \setlength\labelgap{12pt}      % gap between a table label and its text (= 2\tabcolsep)
+\newlength\rowsep      \setlength\rowsep{5pt}         % extra space between table rows
+\newlength\sectionskip \setlength\sectionskip{8pt}    % extra space above a section heading
+\newlength\rulegap     \setlength\rulegap{2.2pt}      % heading baseline to rule
+\newlength\afterrule   \setlength\afterrule{12pt}     % rule to first body line
+\newlength\entrysep    \setlength\entrysep{6pt}       % extra space between entries
+\newlength\bulletsep   \setlength\bulletsep{6pt}      % extra space above a bullet list
+
+% ---- Macros --------------------------------------------------------------
+\makeatletter
+\newcommand\sectionrule{\par\nobreak\vspace{\rulegap}\hrule\nobreak}
+
+% \cvheader{Name}{contact lines separated by \\} -- the contact block is right-aligned
+% under the rule, and the first section heading shares the baseline of its third line.
+\newcommand\cvheader[2]{%
+  \textbf{#1}\sectionrule
+  \vspace{\baselineskip}%
+  \hfill\smash{\begin{tabular}[t]{@{}r@{}}#2\end{tabular}}\par
+  \addvspace{\baselineskip}}
+
+% \begin{cvsection}{HEADING} ... \end{cvsection}: flush-left bold heading with a full-width
+% rule; everything inside is set in the indented body column.
+\newenvironment{cvsection}[1]{%
+  \par\addvspace{\sectionskip}%
+  \textbf{#1}\sectionrule
+  \vspace{\afterrule}\nobreak
+  \begin{list}{}{%
+    \setlength\leftmargin{\bodyindent}%
+    \setlength\rightmargin{\bodyindent}%
+    \setlength\itemsep{\entrysep}%
+    \setlength\topsep{0pt}\setlength\partopsep{0pt}\setlength\parsep{0pt}%
+    \setlength\labelwidth{0pt}\setlength\labelsep{0pt}\setlength\itemindent{0pt}%
+    \interlinepenalty\@M}% page breaks only between entries
+}{\end{list}}
+
+% \entry{Title}{Location}{Organisation}{Dates}: a bold title line with the organisation
+% (slanted) and dates flush right. Leave {Location} or {Organisation} empty to drop them.
+\newcommand\entry[4]{%
+  \item\textbf{#1}\if\relax\detokenize{#2}\relax\else{} @ #2\fi
+  \hfill\mbox{\if\relax\detokenize{#3}\relax\else\textsl{#3}, \fi#4}\par\nobreak}
+
+% Bullet list under an entry.
+\newenvironment{bullets}{%
+  \begin{list}{--}{%
+    \setlength\leftmargin{22pt}\setlength\labelsep{5pt}%
+    \setlength\labelwidth{\dimexpr\leftmargin-\labelsep\relax}%
+    \renewcommand\makelabel[1]{\hfil##1}%
+    \setlength\topsep{\bulletsep}\setlength\partopsep{0pt}%
+    \setlength\itemsep{1pt}\setlength\parsep{0pt}%
+    \@beginparpenalty\@M \@itempenalty\@M}}
+  {\end{list}}
+
+% \begin{labeled} \row{Label}{text} ... \end{labeled}: right-aligned bold labels, wrapped text.
+% Each row ends with \rowsep of space; the environment's end cancels the last one.
+\newenvironment{labeled}{%
+  \item[]\hspace*{-\tablehang}%
+  \tabularx{\dimexpr\linewidth+\tablehang\relax}[t]{@{}>{\bfseries}r@{\hspace{\labelgap}}X@{}}}
+  {\noalign{\vskip-\rowsep}\endtabularx\par}
+\newcommand\row[2]{#1 & #2\tabularnewline\noalign{\vskip\rowsep}}
+
+\makeatother
+\newcommand\gh[1]{\href{https://github.com/smasher164/#1}{#1}}   % one of my GitHub repos
+
+% ==========================================================================
+\begin{document}
+
+\cvheader{Akhil Indurti}{%
+  \textbf{\href{mailto:aindurti@gmail.com}{aindurti@gmail.com} (703-431-5466)}\\
+  \href{https://www.akhil.cc}{akhil.cc}\\
+  \href{https://github.com/smasher164}{github.com/smasher164}}
+
+\begin{cvsection}{SKILLS}
+\begin{labeled}
+\row{Languages}{C, Go, Rust, C++, Assembly, Java, Python, JS, SML, OCaml, Raku, C\#, F\#, Racket, Shell, SQL, \LaTeX.}
+\row{Tools}{HLS, SCTE-35, Widevine DRM, LLVM \& Go toolchains, OpenGL, Git, Docker, Kubernetes, Linux, Nix, GraphQL, Android,
+  Adobe Creative Suite, QEMU, Azure, AWS, GCP, DigitalOcean, fly.io, Terraform, ScyllaDB,
+  MongoDB, Concourse, ZFS.}
+\end{labeled}
+\end{cvsection}
+
+\begin{cvsection}{PROJECTS}
+\begin{labeled}
+\row{\href{https://go-review.googlesource.com/q/owner:aindurti}{golang/go}}{Member who contributes
+  patches, triages issues, and reviews code. Works on the Go compiler, standard library, and runtime.
+  Notable contributions: fused-multiply-add, static analysis checks, and playground.\par
+  \textbf{Speaker at GopherCon 2021}: Gave a 45 min talk about
+  \href{https://www.gophercon.com/agenda/session/593026}{``Writing a Static Analyzer for Go Code''}.}
+\row{\gh{mem}}{A memory allocator for Go.}
+\row{\gh{nas}}{Configuration for Home NAS, running NixOS, ZFS, Tailscale, Home Assistant, Samba, and Plex.}
+\row{\gh{oscons}}{Notes on OS Construction.}
+\row{\gh{mexdown}}{An extensible human-readable plain-text format.}
+\row{\gh{arewesixelyet}}{Site lists support for SIXEL graphics across terminals. Got to front-page of HN.}
+\row{\gh{pw-volume}}{Interface to PipeWire volume controls, before WirePlumber had support. Over 60 active users.}
+\row{\gh{gflat}}{An ML-like programming language with rank-n polymorphism, typeclasses, algebraic data types,
+  green threads, and data-race freedom.}
+\row{\gh{burrito}}{Build system and package manager on an ML-like language with lexical effect handlers.}
+\row{\gh{tapl}}{Typed lambda calculus solutions for learning type theory from \textit{Types and Programming Languages}.\par
+  \textbf{Participant at OPLSS 2021}: Participated in the
+  \href{https://www.cs.uoregon.edu/research/summerschool/summer21/participants.php}{Oregon Programming Languages Summer School}
+  to study interesting topics in PL Theory and Formal Verification.}
+\end{labeled}
+\end{cvsection}
+
+\begin{cvsection}{EXPERIENCE}
+
+\entry{Engineer III, Software Process Engineering}{Los Angeles, CA}{Samsung Ads}{May, 2026 - Present}
+Maintain the Origin Manifest Manipulator, Pipeline, and Sessions services that deliver Samsung TV Plus content and handle
+server-side ad insertion (SSAI).
+\begin{bullets}
+\item Migrated the legacy Origin service into Pipeline, and rolled out Transmit as an alternative SSAI
+  provider to AWS Elemental MediaTailor.
+\item Descaled the Sessions service to cut infrastructure costs, and built dashboards and telemetry for
+  stream and ad-insertion health.
+\end{bullets}
+
+\entry{Software Engineer II on Azure}{Redmond, WA}{Microsoft}{March, 2023 - Nov, 2025}
+Service Fabric team: System Services (Failover Manager, Transport, Federation) and Infrastructure Services.
+\begin{bullets}
+\item Worked on routing, failover, networking, and VM upgrades for the distributed systems platform that
+  underpins much of Azure.
+\item On call for live-site incidents, driving mitigations and RCAs.
+\end{bullets}
+
+\entry{Software Engineer II on .NET}{Redmond, WA}{Microsoft}{May, 2022 - March, 2023}
+\begin{bullets}
+\item \textbf{APICompat}: Worked on the public rollout for a tool that detects binary breaking changes between two
+  .NET assemblies.
+\item \textbf{GenAPI}: Generates C\# source from an assembly. The generated source contains stub
+  declarations for types and members, where declarations preserve the API contract of the
+  original source. Fixed Roslyn bugs for assembly metadata.
+\item \textbf{Doc source porting tool}: Spearheaded internal effort to port externally maintained XML
+  docs into inline docs for the .NET repos.
+\end{bullets}
+
+\entry{Software Engineer II}{Mount Laurel, NJ}{Comcast}{May, 2020 - April, 2022}
+Working on Comcast's Next Generation Access Network (NGAN) to build Genome, a poller for millions of
+network devices across the country.
+\begin{bullets}
+\item Implemented an SNMP connection pool that significantly sped up the long tail of our polling cycle,
+  and cut AWS costs.
+\item Led a testing \& deployment strategy to discover test devices and monitor health statuses.
+\item Detected incompatible changes to GraphQL and Avro schemas.
+\item Automated datalake topic generation and IAM roles via Terraform.
+\item Assisted in MongoDB to ScyllaDB migration, and multi-region setup.
+\item Improved and hired talent to improve code quality and CI infrastructure.
+\end{bullets}
+
+\entry{Research Assistant}{Charlottesville, VA}{ShiftLab}{Jan, 2020 - May, 2020}
+Worked under Professor Samira Khan to find crash-consistency bugs via structured fuzzing, as well add support
+for persistent memory to the Go programming language. Contributed to:
+\begin{bullets}
+\item \href{https://dl.acm.org/doi/abs/10.1145/3373376.3378452}{Cross-Failure Bug Detection in Persistent Memory Programs}
+\item \href{https://dl.acm.org/doi/abs/10.1145/3445814.3446691}{PMFuzz: test case generation for persistent memory programs}
+\end{bullets}
+
+\entry{Teaching Assistant}{Charlottesville, VA}{University of Virginia}{Spring 2018 - Spring 2019}
+\begin{bullets}
+\item \textbf{Theory of Computation}: Course covers automata theory, complexity theory, and problem-solving
+  techniques. I assist in grading, holding office hours, and supervising problem-solving sessions. I developed
+  a new \href{https://www.tmsim.akhil.cc}{Turing Machine Simulator assignment}.
+\item \textbf{Program Data and Representation}: Course covers C++, data structures, and assembly. I assist in
+  grading, holding office hours, and running lab. I developed a new
+  \href{https://uva-cs.github.io/pdr/labs/lab05/index.html}{Tree lab} that introduces AVL trees.
+\end{bullets}
+
+\entry{Research}{Charlottesville, VA}{Center for Automata Processing}{Fall 2017 - Spring 2018}
+I worked to explore the application and implementation of state machines. Under my advisors Professor
+Kevin Skadron and Jack Wadden, \textit{my research} focused on developing and implementing an NFA reduction
+algorithm to perform prefix and suffix merging in VASim.
+
+\entry{Android SDK}{Palo Alto, CA}{TRNQL}{January - August 2015}
+Worked to enable easy integration of contextual information into an application. Created example
+applications for clients to study, and led meetups to introduce the community to these SDK features.
+
+\entry{Software Engineering Intern}{Milpitas, CA}{FireEye}{Summer 2014}
+Implemented a web application for the management and education on the company's security products.
+\begin{bullets}
+\item Wrote a web application to educate, display, and manage the new intrusion prevention system.
+\item Developed a real-world understanding of network security in the context of large organizations.
+\end{bullets}
+
+\end{cvsection}
+
+\begin{cvsection}{EDUCATION}
+
+\entry{University of Virginia (B.S. in Computer Science)}{}{}{}
+\textbf{Coursework}: Operating Systems, Advanced Computer Architecture,
+Graduate Compilers, Machine Learning, Computer Graphics, Capstone Research,
+Algorithms, Theory of Computation, Program Data and Representation
+
+\end{cvsection}
+
+\end{document}

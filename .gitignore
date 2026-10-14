@@ -24,5 +24,6 @@
 !*.toml
 !*.profile
 !*.pdf
+!*.tex
 !go.mod
 !go.sum
